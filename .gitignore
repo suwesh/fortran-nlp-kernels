@@ -21,3 +21,6 @@ htmlcov/
 results/raw/local/
 *.nsys-rep
 *.ncu-rep
+
+subprojects/*
+!subprojects/*.wrap

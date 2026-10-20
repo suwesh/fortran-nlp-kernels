@@ -1,0 +1,37 @@
+#ifndef FORTRAN_NLP_LEXICAL_H
+#define FORTRAN_NLP_LEXICAL_H
+
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void fnlp_jaccard_corpus_serial(
+    const int64_t *candidate_shingles,
+    int64_t candidate_count,
+    const int64_t *corpus_shingles,
+    int64_t corpus_count,
+    const int64_t *document_offsets,
+    int document_count,
+    int64_t *intersection_counts,
+    int64_t *union_counts,
+    double *jaccard_scores
+);
+
+void fnlp_jaccard_corpus_openmp(
+    const int64_t *candidate_shingles,
+    int64_t candidate_count,
+    const int64_t *corpus_shingles,
+    int64_t corpus_count,
+    const int64_t *document_offsets,
+    int document_count,
+    int64_t *intersection_counts,
+    int64_t *union_counts,
+    double *jaccard_scores
+);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
