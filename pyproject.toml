@@ -1,0 +1,36 @@
+[build-system]
+build-backend = "mesonpy"
+
+requires = [
+    "meson-python>=0.18",
+    "nanobind>=3.1",
+    "numpy>=2.0",
+]
+
+[project]
+name = "fortran-nlp-kernels"
+version = "0.1.0"
+description = "Fortran-backed exact lexical and vector similarity kernels for Python"
+readme = "README.md"
+requires-python = ">=3.10"
+
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+
+authors = [
+    { name = "Suwesh Prasad Sah", email = "83471963+suwesh@users.noreply.github.com" },
+]
+
+dependencies = [
+    "numpy>=2.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8",
+]
+
+[project.urls]
+Homepage = "https://suwesh.github.io/"
+Repository = "https://github.com/suwesh/fortran-nlp-kernels"
+Issues = "https://github.com/suwesh/fortran-nlp-kernels/issues"

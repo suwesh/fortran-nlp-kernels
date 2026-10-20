@@ -13,6 +13,24 @@ project(
 python = import('python').find_installation(
   pure: false,
 )
+python = import('python').find_installation(
+  pure: false,
+)
+
+python.install_sources(
+  'src/fortran_nlp/__init__.py',
+  subdir: 'fortran_nlp',
+)
+
+python.install_sources(
+  [
+    'src/fortran_nlp/lexical/__init__.py',
+    'src/fortran_nlp/lexical/index.py',
+    'src/fortran_nlp/lexical/preprocessing.py',
+    'src/fortran_nlp/lexical/reference.py',
+  ],
+  subdir: 'fortran_nlp/lexical',
+)
 
 nanobind_dep = dependency(
   'nanobind',
