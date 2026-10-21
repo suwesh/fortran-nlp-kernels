@@ -46,7 +46,7 @@
 
 ## CPU Packaging and Release
 
-- [ ] Run the complete test suite after BLAS integration
+- [x] Run the complete test suite after BLAS integration
 - [ ] Build and install-test a Linux x86-64 wheel
 - [ ] Build and inspect the source distribution
 - [ ] Test installation in a clean Linux Python environment
