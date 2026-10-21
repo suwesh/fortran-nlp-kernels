@@ -77,12 +77,12 @@ cpu_bindings.cpp         → C-to-Python adapter
 
 ## Platform support
 
-The `0.1.0b1` wheel is built for:
-
-```text
-Operating system: Linux
-Architecture:     x86-64
-Python:           CPython 3.12
+The initial `0.1.0b1` wheel targets CPython 3.12. The current development branch is continuously built and tested for: 
+```text 
+Operating system: Linux 
+Architecture: x86-64 
+Python: CPython 3.10, 3.11, 3.12, and 3.13 
+Wheel policy: manylinux_2_28
 ```
 
 The source package declares Python 3.10 or newer, but this beta has currently been built and validated with CPython 3.12 on Ubuntu 24.04.
@@ -313,6 +313,47 @@ fortran_openmp   → handwritten OpenMP Fortran
 fortran_blas     → OpenBLAS SGEMV/SGEMM through Fortran
 ```
 
+### Automatic backend selection
+
+Both public index families accept:
+
+```python
+backend="auto"
+```
+
+The current deterministic policy is:
+
+```text
+JaccardIndex
+auto → fortran_openmp
+
+FlatIndexIP
+FlatIndexL2
+FlatIndexCosine
+auto → fortran_blas
+```
+
+Example:
+
+```python
+from fortran_nlp.lexical import JaccardIndex
+from fortran_nlp.vector_search import FlatIndexCosine
+
+lexical_index = JaccardIndex(
+    corpus_texts,
+    backend="auto",
+)
+
+vector_index = FlatIndexCosine(
+    database_vectors,
+    backend="auto",
+)
+```
+
+The current policy selects stable production defaults. It does not
+benchmark the host machine dynamically. Future releases may use measured
+workload crossover points to refine automatic selection.
+
 ## Thread control
 
 The handwritten OpenMP and OpenBLAS backends use different thread controls.
@@ -355,9 +396,17 @@ nanobind extension tests
 NumPy equivalence tests
 serial/OpenMP equivalence tests
 BLAS/handwritten equivalence tests
+single-query and batched-query tests
 public Python API tests
+input-validation and edge-case tests
+deterministic tie-handling tests
+package-metadata tests
 wheel smoke tests
 ```
+
+The current development branch passes **79 Python tests** covering
+lexical search, exact vector search, native bindings, automatic backend
+selection, memory layouts, input validation, and package metadata.
 
 Run the Python test suite:
 
@@ -372,6 +421,25 @@ Native test programs are available under:
 ```text
 tests/native/
 ```
+
+### Continuous integration
+
+The repository includes two Linux CI workflows:
+
+```text
+CPU Tests
+→ builds the package from source
+→ runs the complete test suite on CPython 3.10–3.13
+
+Build Linux Wheels
+→ builds and tests manylinux wheels with cibuildwheel
+→ targets CPython 3.10, 3.11, 3.12, and 3.13
+```
+
+The wheel workflow runs manually or when a version tag matching `v*`
+is pushed. Generated wheels are stored as temporary workflow artifacts.
+The workflow does not automatically attach wheels to GitHub Releases or
+upload them to PyPI.
 
 ## Build system
 
@@ -429,12 +497,15 @@ Working technical-report title:
 
 Planned follow-up work includes:
 
+- benchmark-informed automatic backend selection;
 - optional document and vector IDs;
 - handwritten serial and OpenMP batched-query baselines;
-- optimized top-k selection;
+- optimized exact top-k selection;
 - CPU performance evaluation against NumPy, C++, and FAISS;
+- automated PyPI Trusted Publishing;
 - CUDA Fortran lexical and vector-search kernels;
-- cuBLAS-backed batched vector search;
+- cuBLAS-backed vector search;
+- CUDA C++ research baselines;
 - FAISS GPU exact-flat comparisons;
 - GPU-resident corpora and vector databases.
 
