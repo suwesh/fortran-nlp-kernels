@@ -3,6 +3,7 @@ from fortran_nlp import _cpu
 from .normalization import normalize_database, normalize_vector
 
 SUPPORTED_BACKENDS = {
+    "auto",
     "fortran",
     "fortran_openmp",
     "fortran_blas",
@@ -23,6 +24,8 @@ class _FlatIndexBase:
                 f"Available backends: "
                 f"{', '.join(sorted(SUPPORTED_BACKENDS))}"
             )
+        if backend == "auto":
+            backend = "fortran_blas"
 
         database = np.asarray(
             database_vectors,

@@ -5,6 +5,7 @@ from fortran_nlp import _cpu
 from .preprocessing import (DEFAULT_SHINGLE_SIZE, encode_text_shingles, pack_corpus)
 
 SUPPORTED_BACKENDS = {
+    "auto",
     "fortran",
     "fortran_openmp",
 }
@@ -29,20 +30,22 @@ class JaccardIndex:
             raise ValueError(f"Unsupported backend '{backend}'. Available backends: {', '.join(sorted(SUPPORTED_BACKENDS))}")
         if shingle_size < 1:
             raise ValueError(f"shingle_size must be at least 1")
+        if backend == "auto":
+            backend = "fortran_openmp"
 
-        self._corpus_text = tuple(corpus_texts)
+        self._corpus_texts = tuple(corpus_texts)
         self._backend = backend
         self._shingle_size = shingle_size
         (
             self._corpus_shingles,
             self._document_offsets,
         ) = pack_corpus(
-            self._corpus_text,
+            self._corpus_texts,
             shingle_size=self._shingle_size,
         )
     
     @property
-    def Backend(self) -> str:
+    def backend(self) -> str:
         return self._backend
     @property
     def document_count(self) -> int:

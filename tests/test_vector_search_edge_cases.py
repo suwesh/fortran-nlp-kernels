@@ -339,3 +339,44 @@ def test_ties_use_lower_positional_id(
         indices,
         np.array([0, 1], dtype=np.int64),
     )
+
+@pytest.mark.parametrize(
+    "index_class",
+    [
+        FlatIndexIP,
+        FlatIndexL2,
+        FlatIndexCosine,
+    ],
+)
+def test_vector_auto_selects_blas(
+    database,
+    index_class,
+):
+    index = index_class(
+        database,
+        backend="auto",
+    )
+
+    assert index.backend == "fortran_blas"
+
+def test_auto_backend_supports_batch(database):
+    index = FlatIndexIP(
+        database,
+        backend="auto",
+    )
+
+    queries = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [0.0, 1.0, 0.0],
+        ],
+        dtype=np.float32,
+    )
+
+    values, indices = index.search_batch(
+        queries,
+        k=2,
+    )
+
+    assert values.shape == (2, 2)
+    assert indices.shape == (2, 2)

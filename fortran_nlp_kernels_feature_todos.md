@@ -23,8 +23,8 @@
 - [ ] Validate that `document_ids` and `corpus_texts` have equal lengths
 - [ ] Return the supplied ID through `JaccardResult.document_id`
 - [ ] Add tests for string IDs, integer IDs, and default positional IDs
-- [ ] Add empty-corpus, empty-query, short-text, identical-document, and duplicate-document tests
-- [ ] Add low-level malformed-offset validation tests
+- [x] Add empty-corpus, empty-query, short-text, identical-document, and duplicate-document tests
+- [x] Add low-level malformed-offset validation tests
 - [ ] Add README installation and `JaccardIndex` usage examples
 
 ## Vector-Search Module: Remaining Product Features

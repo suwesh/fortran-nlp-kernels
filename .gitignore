@@ -24,3 +24,4 @@ results/raw/local/
 
 subprojects/*
 !subprojects/*.wrap
+pypi_secret.json

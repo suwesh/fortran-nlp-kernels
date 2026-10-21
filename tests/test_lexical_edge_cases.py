@@ -271,3 +271,11 @@ def test_final_native_offset_must_equal_corpus_length():
             corpus,
             invalid_offsets,
         )
+
+def test_lexical_auto_selects_openmp():
+    index = JaccardIndex(
+        ["reset the account password"],
+        backend="auto",
+    )
+
+    assert index.backend == "fortran_openmp"
