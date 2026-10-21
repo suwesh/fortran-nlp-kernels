@@ -6,6 +6,7 @@
 #include <nanobind/ndarray.h>
 
 #include "fortran_nlp_lexical.h"
+#include "fortran_nlp_vector_search.h"
 
 namespace nb = nanobind;
 
@@ -14,6 +15,20 @@ using Int64Array = nb::ndarray<
     const std::int64_t,
     nb::ndim<1>,
     nb::c_contig,
+    nb::device::cpu
+>;
+using Float32Vector = nb::ndarray<
+    nb::numpy,
+    const float,
+    nb::ndim<1>,
+    nb::c_contig,
+    nb::device::cpu
+>;
+using Float32Database = nb::ndarray<
+    nb::numpy,
+    const float,
+    nb::ndim<2>,
+    nb::f_contig,
     nb::device::cpu
 >;
 
@@ -132,6 +147,147 @@ nb::tuple run_jaccard(
         scores_object
     );
 }
+nb::tuple run_vector_search(
+    const Float32Vector &query,
+    const Float32Database &database,
+    int k,
+    bool use_l2,
+    bool use_openmp
+)
+{
+    const std::size_t dimension_size = query.shape(0);
+    const std::size_t vector_count_size = database.shape(1);
+
+    if (database.shape(0) != dimension_size) {
+        throw std::invalid_argument(
+            "query and database vectors must have equal dimensions"
+        );
+    }
+
+    if (dimension_size == 0) {
+        throw std::invalid_argument(
+            "vector dimension must be greater than zero"
+        );
+    }
+
+    if (vector_count_size == 0) {
+        throw std::invalid_argument(
+            "database must contain at least one vector"
+        );
+    }
+
+    if (k < 1) {
+        throw std::invalid_argument(
+            "k must be at least 1"
+        );
+    }
+
+    if (
+        static_cast<std::size_t>(k) >
+        vector_count_size
+    ) {
+        throw std::invalid_argument(
+            "k cannot exceed the database size"
+        );
+    }
+
+    if (
+        dimension_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "vector dimension exceeds the C int range"
+        );
+    }
+
+    if (
+        vector_count_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "database size exceeds the C int range"
+        );
+    }
+
+    const int dimension =
+        static_cast<int>(dimension_size);
+
+    const int vector_count =
+        static_cast<int>(vector_count_size);
+
+    nb::module_ numpy = nb::module_::import_("numpy");
+
+    nb::object values_object =
+        numpy.attr("empty")(k, "float32");
+
+    nb::object indices_object =
+        numpy.attr("empty")(k, "int64");
+
+    auto values =
+        nb::cast<nb::ndarray<nb::numpy, float>>(
+            values_object
+        );
+
+    auto indices =
+        nb::cast<nb::ndarray<nb::numpy, std::int64_t>>(
+            indices_object
+        );
+
+    {
+        nb::gil_scoped_release release;
+
+        if (use_l2 && use_openmp) {
+            fnlp_l2_search_openmp(
+                query.data(),
+                database.data(),
+                dimension,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        } else if (use_l2) {
+            fnlp_l2_search_serial(
+                query.data(),
+                database.data(),
+                dimension,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        } else if (use_openmp) {
+            fnlp_ip_search_openmp(
+                query.data(),
+                database.data(),
+                dimension,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        } else {
+            fnlp_ip_search_serial(
+                query.data(),
+                database.data(),
+                dimension,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        }
+    }
+
+    return nb::make_tuple(
+        values_object,
+        indices_object
+    );
+}
 
 
 NB_MODULE(_cpu, module)
@@ -171,5 +327,57 @@ NB_MODULE(_cpu, module)
         nb::arg("candidate_shingles"),
         nb::arg("corpus_shingles"),
         nb::arg("document_offsets")
+    );
+
+    module.def(
+        "l2_search_serial",
+        [](const Float32Vector &query,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search(
+                query, database, k, true, false);
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+    
+    module.def(
+        "l2_search_openmp",
+        [](const Float32Vector &query,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search(
+                query, database, k, true, true);
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_serial",
+        [](const Float32Vector &query,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search(
+                query, database, k, false, false);
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_openmp",
+        [](const Float32Vector &query,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search(
+                query, database, k, false, true);
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
     );
 }

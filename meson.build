@@ -13,9 +13,6 @@ project(
 python = import('python').find_installation(
   pure: false,
 )
-python = import('python').find_installation(
-  pure: false,
-)
 
 python.install_sources(
   'src/fortran_nlp/__init__.py',
@@ -30,6 +27,16 @@ python.install_sources(
     'src/fortran_nlp/lexical/reference.py',
   ],
   subdir: 'fortran_nlp/lexical',
+)
+
+python.install_sources(
+  [
+    'src/fortran_nlp/vector_search/__init__.py',
+    'src/fortran_nlp/vector_search/flat.py',
+    'src/fortran_nlp/vector_search/normalization.py',
+    'src/fortran_nlp/vector_search/reference.py',
+  ],
+  subdir: 'fortran_nlp/vector_search',
 )
 
 nanobind_dep = dependency(
@@ -53,6 +60,9 @@ cpu_extension = python.extension_module(
     'src/native/cpu/lexical/lexical_core.f90',
     'src/native/cpu/lexical/lexical_c_api.f90',
     'src/native/bindings/cpu_bindings.cpp',
+    'src/native/cpu/vector_search/topk_core.f90',
+    'src/native/cpu/vector_search/vector_search_core.f90',
+    'src/native/cpu/vector_search/vector_search_c_api.f90',
   ],
   include_directories: native_include,
   dependencies: [
