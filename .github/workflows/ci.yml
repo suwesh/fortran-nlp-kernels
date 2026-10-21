@@ -1,0 +1,81 @@
+name: CPU Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+
+    env:
+      OMP_NUM_THREADS: "4"
+      OPENBLAS_NUM_THREADS: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gfortran \
+            g++ \
+            libopenblas-dev \
+            libgomp1
+
+      - name: Upgrade packaging tools
+        run: |
+          python -m pip install --upgrade \
+            pip \
+            build
+
+      - name: Install package and test dependencies
+        run: |
+          python -m pip install -e ".[test]"
+
+      - name: Display package version
+        run: |
+          python -c "import fortran_nlp; print(fortran_nlp.__version__)"
+
+      - name: Verify native runtime dependencies
+        run: |
+          extension_path="$(
+            python -c \
+              'from fortran_nlp import _cpu; print(_cpu.__file__)'
+          )"
+
+          echo "Native extension: ${extension_path}"
+          ldd "${extension_path}"
+
+          ldd "${extension_path}" | grep -E \
+            'openblas|gfortran|gomp'
+
+      - name: Run complete test suite
+        run: |
+          python -m pytest tests/ -v
