@@ -39,6 +39,15 @@ def query():
         [1.0, 2.0, 3.0],
         dtype=np.float32,
     )
+@pytest.fixture
+def query_batch():
+    return np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [0.0, 1.0, 0.0],
+        ],
+        dtype=np.float32,
+    )
 
 
 @pytest.mark.parametrize("backend", BACKENDS)
@@ -78,6 +87,47 @@ def test_flat_index_ip_matches_numpy(
         expected_indices,
     )
 
+def test_flat_index_ip_batch_matches_numpy(
+    database,
+    query_batch,
+):
+    index = FlatIndexIP(
+        database,
+        backend="fortran_blas",
+    )
+
+    actual_values, actual_indices = index.search_batch(
+        query_batch,
+        k=2,
+    )
+
+    expected_results = [
+        search_ip(query, database, k=2)
+        for query in query_batch
+    ]
+
+    expected_values = np.stack(
+        [result[0] for result in expected_results]
+    )
+
+    expected_indices = np.stack(
+        [result[1] for result in expected_results]
+    )
+
+    assert actual_values.shape == (2, 2)
+    assert actual_indices.shape == (2, 2)
+
+    assert np.allclose(
+        actual_values,
+        expected_values,
+        rtol=0.0,
+        atol=1e-6,
+    )
+
+    assert np.array_equal(
+        actual_indices,
+        expected_indices,
+    )
 
 @pytest.mark.parametrize("backend", BACKENDS)
 def test_flat_index_l2_matches_numpy(
@@ -109,6 +159,45 @@ def test_flat_index_l2_matches_numpy(
         expected_values,
         rtol=0.0,
         atol=1e-6,
+    )
+
+    assert np.array_equal(
+        actual_indices,
+        expected_indices,
+    )
+
+def test_flat_index_l2_batch_matches_numpy(
+    database,
+    query_batch,
+):
+    index = FlatIndexL2(
+        database,
+        backend="fortran_blas",
+    )
+
+    actual_values, actual_indices = index.search_batch(
+        query_batch,
+        k=2,
+    )
+
+    expected_results = [
+        search_l2(query, database, k=2)
+        for query in query_batch
+    ]
+
+    expected_values = np.stack(
+        [result[0] for result in expected_results]
+    )
+
+    expected_indices = np.stack(
+        [result[1] for result in expected_results]
+    )
+
+    assert np.allclose(
+        actual_values,
+        expected_values,
+        rtol=0.0,
+        atol=1e-5,
     )
 
     assert np.array_equal(
@@ -160,6 +249,63 @@ def test_flat_index_cosine_matches_numpy(
         expected_values,
         rtol=0.0,
         atol=1e-6,
+    )
+
+    assert np.array_equal(
+        actual_indices,
+        expected_indices,
+    )
+
+def test_flat_index_cosine_batch_matches_numpy(
+    database,
+    query_batch,
+):
+    index = FlatIndexCosine(
+        database,
+        backend="fortran_blas",
+    )
+
+    actual_values, actual_indices = index.search_batch(
+        query_batch,
+        k=2,
+    )
+
+    normalized_database = (
+        database
+        / np.linalg.norm(
+            database,
+            axis=1,
+            keepdims=True,
+        )
+    ).astype(np.float32)
+
+    normalized_queries = (
+        query_batch
+        / np.linalg.norm(
+            query_batch,
+            axis=1,
+            keepdims=True,
+        )
+    ).astype(np.float32)
+
+    expected_results = [
+        search_ip(query, normalized_database, k=2)
+        for query in normalized_queries
+    ]
+
+    expected_values = np.stack(
+        [result[0] for result in expected_results]
+    )
+
+    expected_indices = np.stack(
+        [result[1] for result in expected_results]
+    )
+
+    assert np.allclose(
+        actual_values,
+        expected_values,
+        rtol=0.0,
+        atol=1e-5,
     )
 
     assert np.array_equal(

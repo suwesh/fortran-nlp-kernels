@@ -26,9 +26,9 @@ def topk_largest(
     """Return the k largest values and zero-based IDs."""
 
     indices = np.argsort(
-        values,
+        -values,
         kind="stable",
-    )[::-1][:k]
+    )[:k]
 
     return values[indices], indices.astype(np.int64)
 

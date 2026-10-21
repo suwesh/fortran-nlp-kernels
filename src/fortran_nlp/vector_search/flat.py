@@ -91,6 +91,37 @@ class _FlatIndexBase:
 
         return query
 
+    def _prepare_query_batch(
+        self,
+        query_vectors: np.ndarray,
+    ) -> np.ndarray:
+        queries = np.asarray(
+            query_vectors,
+            dtype=np.float32,
+        )
+
+        if queries.ndim != 2:
+            raise ValueError(
+                "query_vectors must be two-dimensional"
+            )
+
+        if queries.shape[0] == 0:
+            raise ValueError(
+                "query batch must contain at least one vector"
+            )
+
+        if queries.shape[1] != self._dimension:
+            raise ValueError(
+                "queries and database vectors must have equal dimensions"
+            )
+
+    # Python:  (query_count, dimension)
+    # Fortran: (dimension, query_count)
+        return np.asfortranarray(
+            queries.T,
+            dtype=np.float32,
+    )
+
     def _validate_k(self, k: int) -> None:
         if k < 1:
             raise ValueError("k must be at least 1")
@@ -149,6 +180,32 @@ class FlatIndexIP(_FlatIndexBase):
         raise RuntimeError(
             f"Unsupported backend state: {self._backend}"
         )
+    def search_batch(
+        self,
+        query_vectors: np.ndarray,
+        *,
+        k: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        self._validate_k(k)
+
+        if self._backend != "fortran_blas":
+            raise NotImplementedError(
+                "Batched search currently requires backend='fortran_blas'"
+            )
+
+        queries = self._prepare_query_batch(
+            query_vectors
+        )
+
+        values, indices = _cpu.ip_search_batch_blas(
+            queries,
+            self._database,
+            k,
+        )
+
+    # Native: (k, query_count)
+    # Public: (query_count, k)
+        return values.T, indices.T
 
 
 class FlatIndexL2(_FlatIndexBase):
@@ -187,6 +244,32 @@ class FlatIndexL2(_FlatIndexBase):
         raise RuntimeError(
             f"Unsupported backend state: {self._backend}"
         )
+    def search_batch(
+            self,
+            query_vectors: np.ndarray,
+            *,
+            k: int = 1,
+        ) -> tuple[np.ndarray, np.ndarray]:
+            self._validate_k(k)
+    
+            if self._backend != "fortran_blas":
+                raise NotImplementedError(
+                    "Batched search currently requires backend='fortran_blas'"
+                )
+    
+            queries = self._prepare_query_batch(
+                query_vectors
+            )
+    
+            values, indices = _cpu.l2_search_batch_blas(
+                queries,
+                self._database,
+                k,
+            )
+    
+        # Native: (k, query_count)
+        # Public: (query_count, k)
+            return values.T, indices.T
 
 
 class FlatIndexCosine(FlatIndexIP):
@@ -224,5 +307,19 @@ class FlatIndexCosine(FlatIndexIP):
 
         return super().search(
             normalized_query,
+            k=k,
+        )
+    def search_batch(
+        self,
+        query_vectors: np.ndarray,
+        *,
+        k: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        normalized_queries = normalize_database(
+            query_vectors
+        )
+
+        return super().search_batch(
+            normalized_queries,
             k=k,
         )

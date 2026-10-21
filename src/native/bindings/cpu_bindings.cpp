@@ -31,6 +31,13 @@ using Float32Database = nb::ndarray<
     nb::f_contig,
     nb::device::cpu
 >;
+using Float32QueryBatch = nb::ndarray<
+    nb::numpy,
+    const float,
+    nb::ndim<2>,
+    nb::f_contig,
+    nb::device::cpu
+>;
 
 nb::tuple run_jaccard(
     const Int64Array &candidate,
@@ -370,6 +377,160 @@ nb::tuple run_vector_search_blas(
     );
 }
 
+nb::tuple run_vector_search_batch_blas(
+    const Float32QueryBatch &queries,
+    const Float32Database &database,
+    int k,
+    bool use_l2
+)
+{
+    const std::size_t dimension_size = queries.shape(0);
+    const std::size_t query_count_size = queries.shape(1);
+    const std::size_t vector_count_size = database.shape(1);
+
+    if (database.shape(0) != dimension_size) {
+        throw std::invalid_argument(
+            "queries and database vectors must have equal dimensions"
+        );
+    }
+
+    if (dimension_size == 0) {
+        throw std::invalid_argument(
+            "vector dimension must be greater than zero"
+        );
+    }
+
+    if (query_count_size == 0) {
+        throw std::invalid_argument(
+            "query batch must contain at least one vector"
+        );
+    }
+
+    if (vector_count_size == 0) {
+        throw std::invalid_argument(
+            "database must contain at least one vector"
+        );
+    }
+
+    if (k < 1) {
+        throw std::invalid_argument(
+            "k must be at least 1"
+        );
+    }
+
+    if (
+        static_cast<std::size_t>(k) >
+        vector_count_size
+    ) {
+        throw std::invalid_argument(
+            "k cannot exceed the database size"
+        );
+    }
+
+    if (
+        dimension_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "vector dimension exceeds the C int range"
+        );
+    }
+
+    if (
+        query_count_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "query count exceeds the C int range"
+        );
+    }
+
+    if (
+        vector_count_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "database size exceeds the C int range"
+        );
+    }
+
+    const int dimension =
+        static_cast<int>(dimension_size);
+
+    const int query_count =
+        static_cast<int>(query_count_size);
+
+    const int vector_count =
+        static_cast<int>(vector_count_size);
+
+    nb::module_ numpy = nb::module_::import_("numpy");
+
+    nb::object values_object =
+        numpy.attr("empty")(
+            nb::make_tuple(k, query_count),
+            "float32",
+            "F"
+        );
+
+    nb::object indices_object =
+        numpy.attr("empty")(
+            nb::make_tuple(k, query_count),
+            "int64",
+            "F"
+        );
+
+    auto values =
+        nb::cast<nb::ndarray<nb::numpy, float>>(
+            values_object
+        );
+
+    auto indices =
+        nb::cast<
+            nb::ndarray<nb::numpy, std::int64_t>
+        >(
+            indices_object
+        );
+
+    {
+        nb::gil_scoped_release release;
+
+        if (use_l2) {
+            fnlp_l2_search_batch_blas(
+                queries.data(),
+                database.data(),
+                dimension,
+                query_count,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        } else {
+            fnlp_ip_search_batch_blas(
+                queries.data(),
+                database.data(),
+                dimension,
+                query_count,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        }
+    }
+
+    return nb::make_tuple(
+        values_object,
+        indices_object
+    );
+}
+
 
 NB_MODULE(_cpu, module)
 {
@@ -484,6 +645,32 @@ NB_MODULE(_cpu, module)
                 query, database, k, false);
         },
         nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "l2_search_batch_blas",
+        [](const Float32QueryBatch &queries,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search_batch_blas(
+                queries, database, k, true);
+        },
+        nb::arg("query_vectors"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_batch_blas",
+        [](const Float32QueryBatch &queries,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search_batch_blas(
+                queries, database, k, false);
+        },
+        nb::arg("query_vectors"),
         nb::arg("database_vectors"),
         nb::arg("k")
     );
