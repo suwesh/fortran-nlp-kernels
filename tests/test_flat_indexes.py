@@ -16,6 +16,7 @@ from fortran_nlp.vector_search.reference import (
 BACKENDS = [
     "fortran",
     "fortran_openmp",
+    "fortran_blas",
 ]
 
 

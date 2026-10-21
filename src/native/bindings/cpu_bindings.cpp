@@ -289,6 +289,87 @@ nb::tuple run_vector_search(
     );
 }
 
+nb::tuple run_vector_search_blas(
+    const Float32Vector &query,
+    const Float32Database &database,
+    int k,
+    bool use_l2
+)
+{
+    const int dimension =
+        static_cast<int>(query.shape(0));
+
+    const int vector_count =
+        static_cast<int>(database.shape(1));
+
+    if (database.shape(0) != query.shape(0)) {
+        throw std::invalid_argument(
+            "query and database vectors must have equal dimensions"
+        );
+    }
+
+    if (dimension < 1 || vector_count < 1) {
+        throw std::invalid_argument(
+            "query and database must not be empty"
+        );
+    }
+
+    if (k < 1 || k > vector_count) {
+        throw std::invalid_argument(
+            "k must be between 1 and the database size"
+        );
+    }
+
+    nb::module_ numpy = nb::module_::import_("numpy");
+
+    nb::object values_object =
+        numpy.attr("empty")(k, "float32");
+
+    nb::object indices_object =
+        numpy.attr("empty")(k, "int64");
+
+    auto values =
+        nb::cast<nb::ndarray<nb::numpy, float>>(
+            values_object
+        );
+
+    auto indices =
+        nb::cast<nb::ndarray<nb::numpy, std::int64_t>>(
+            indices_object
+        );
+
+    {
+        nb::gil_scoped_release release;
+
+        if (use_l2) {
+            fnlp_l2_search_blas(
+                query.data(),
+                database.data(),
+                dimension,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        } else {
+            fnlp_ip_search_blas(
+                query.data(),
+                database.data(),
+                dimension,
+                vector_count,
+                k,
+                values.data(),
+                indices.data()
+            );
+        }
+    }
+
+    return nb::make_tuple(
+        values_object,
+        indices_object
+    );
+}
+
 
 NB_MODULE(_cpu, module)
 {
@@ -375,6 +456,32 @@ NB_MODULE(_cpu, module)
            int k) {
             return run_vector_search(
                 query, database, k, false, true);
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "l2_search_blas",
+        [](const Float32Vector &query,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search_blas(
+                query, database, k, true);
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_blas",
+        [](const Float32Vector &query,
+           const Float32Database &database,
+           int k) {
+            return run_vector_search_blas(
+                query, database, k, false);
         },
         nb::arg("query_vector"),
         nb::arg("database_vectors"),

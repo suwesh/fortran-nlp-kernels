@@ -47,6 +47,26 @@ void fnlp_ip_search_openmp(
     int64_t *topk_indices
 );
 
+void fnlp_l2_search_blas(
+    const float *query_vector,
+    const float *database_vectors,
+    int dimension,
+    int vector_count,
+    int k,
+    float *topk_distances,
+    int64_t *topk_indices
+);
+
+void fnlp_ip_search_blas(
+    const float *query_vector,
+    const float *database_vectors,
+    int dimension,
+    int vector_count,
+    int k,
+    float *topk_similarities,
+    int64_t *topk_indices
+);
+
 #ifdef __cplusplus
 }
 #endif

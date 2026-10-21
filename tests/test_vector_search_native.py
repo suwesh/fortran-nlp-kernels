@@ -66,6 +66,18 @@ def test_vector_search_serial_openmp_equivalence():
         k,
     )
 
+    l2_blas = _cpu.l2_search_blas(
+        query,
+        database,
+        k,
+    )
+
+    ip_blas = _cpu.ip_search_blas(
+        query,
+        database,
+        k,
+    )
+
     assert np.allclose(
         l2_serial[0],
         expected_l2_values,
@@ -112,4 +124,28 @@ def test_vector_search_serial_openmp_equivalence():
     assert np.array_equal(
         ip_serial[1],
         ip_openmp[1],
+    )
+    
+    assert np.allclose(
+        l2_blas[0],
+        l2_serial[0],
+        rtol=0.0,
+        atol=1e-5,
+    )
+
+    assert np.array_equal(
+        l2_blas[1],
+        l2_serial[1],
+    )
+
+    assert np.allclose(
+        ip_blas[0],
+        ip_serial[0],
+        rtol=0.0,
+        atol=1e-5,
+    )
+
+    assert np.array_equal(
+        ip_blas[1],
+        ip_serial[1],
     )

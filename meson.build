@@ -50,6 +50,13 @@ openmp_fortran_dep = dependency(
   required: true,
 )
 
+fortran_compiler = meson.get_compiler('fortran')
+
+openblas_dep = fortran_compiler.find_library(
+  'openblas',
+  required: true,
+)
+
 native_include = include_directories(
   'src/native/include',
 )
@@ -62,12 +69,14 @@ cpu_extension = python.extension_module(
     'src/native/bindings/cpu_bindings.cpp',
     'src/native/cpu/vector_search/topk_core.f90',
     'src/native/cpu/vector_search/vector_search_core.f90',
+    'src/native/cpu/vector_search/vector_search_blas.f90',
     'src/native/cpu/vector_search/vector_search_c_api.f90',
   ],
   include_directories: native_include,
   dependencies: [
     nanobind_dep,
     openmp_fortran_dep,
+    openblas_dep,
   ],
   fortran_args: [
     '-O3',

@@ -5,6 +5,7 @@ from .normalization import normalize_database, normalize_vector
 SUPPORTED_BACKENDS = {
     "fortran",
     "fortran_openmp",
+    "fortran_blas",
 }
 
 class _FlatIndexBase:
@@ -138,6 +139,13 @@ class FlatIndexIP(_FlatIndexBase):
                 k,
             )
 
+        if self._backend == "fortran_blas":
+            return _cpu.ip_search_blas(
+                query,
+                self._database,
+                k,
+            )
+
         raise RuntimeError(
             f"Unsupported backend state: {self._backend}"
         )
@@ -164,6 +172,13 @@ class FlatIndexL2(_FlatIndexBase):
 
         if self._backend == "fortran_openmp":
             return _cpu.l2_search_openmp(
+                query,
+                self._database,
+                k,
+            )
+
+        if self._backend == "fortran_blas":
+            return _cpu.l2_search_blas(
                 query,
                 self._database,
                 k,
