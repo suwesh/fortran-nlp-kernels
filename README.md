@@ -404,7 +404,7 @@ package-metadata tests
 wheel smoke tests
 ```
 
-The current development branch passes **79 Python tests** covering
+The current development branch passes **98 Python tests** covering
 lexical search, exact vector search, native bindings, automatic backend
 selection, memory layouts, input validation, and package metadata.
 

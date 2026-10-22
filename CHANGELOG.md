@@ -12,24 +12,24 @@ APIs may evolve before the stable `0.1.0` release.
 
 - Automatic backend selection through `backend="auto"`.
   - `JaccardIndex` resolves `auto` to `fortran_openmp`.
-  - `FlatIndexIP`, `FlatIndexL2`, and `FlatIndexCosine` resolve `auto`
-    to `fortran_blas`.
+  - `FlatIndexIP`, `FlatIndexL2`, and `FlatIndexCosine` resolve `auto` to `fortran_blas`.
 - Comprehensive lexical edge-case tests.
 - Comprehensive vector-search edge-case tests.
-- Validation for empty, malformed, noncontiguous, and dtype-converted
-  inputs.
+- Validation for empty, malformed, noncontiguous, and dtype-converted inputs.
 - Deterministic lower-positional-ID tie handling.
 - Zero-vector validation for cosine similarity.
 - Package version exposure through `fortran_nlp.__version__`.
 - Linux CPU GitHub Actions test matrix.
-- Automated `manylinux_2_28` wheel builds for CPython 3.10, 3.11,
-  3.12, and 3.13 through `cibuildwheel`.
+- Automated `manylinux_2_28` wheel builds for CPython 3.10, 3.11, 3.12, and 3.13 through `cibuildwheel`.
+- Batched lexical Jaccard search through `JaccardIndex.search_batch()`.
+- Packed multi-candidate shingle representation with candidate offsets.
+- OpenMP parallelism across independent candidate-document pairs.
+- Native Fortran, C ABI, nanobind, and public Python tests for batched lexical search.
 
 ### Changed
 
-- Descending NumPy reference ranking now preserves deterministic
-  positional ordering for tied similarity scores.
-- Development and release validation now cover 79 Python tests.
+- Descending NumPy reference ranking now preserves deterministic positional ordering for tied similarity scores.
+- Development and release validation now cover 98 Python tests.
 - Linux wheels are built and tested across CPython 3.10–3.13.
 
 ### Planned
