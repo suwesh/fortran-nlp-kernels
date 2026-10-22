@@ -381,7 +381,7 @@ contains
         deallocate(distances)
     end subroutine l2_search_batch_blas
 
-        subroutine validate_batch_search_inputs( &
+    subroutine validate_batch_search_inputs( &
         query_vectors, &
         database_vectors, &
         k &

@@ -4,6 +4,7 @@ module fnlp_lexical_core
     private
     public :: jaccard_corpus_serial
     public :: jaccard_corpus_openmp
+    public :: jaccard_batch_corpus
 
 contains
     ! candidate × one existing document - serial
@@ -130,7 +131,7 @@ contains
         do document_index = 1, document_count
             start_index = document_offsets(document_index) + 1_int64
             end_index = document_offsets(document_index + 1)
-            call jaccard_sorted(&
+            call jaccard_sorted( &
                 candidate_shingles, &
                 corpus_shingles(start_index:end_index), &
                 intersection_counts(document_index), &
@@ -140,5 +141,61 @@ contains
         end do
         !$omp end parallel do
     end subroutine jaccard_corpus_openmp
+
+    ! Multiple candidates x all existing documents - Parallel
+    subroutine jaccard_batch_corpus( &
+        candidate_shingles, &
+        candidate_offsets, &
+        candidate_count, &
+        corpus_shingles, &
+        document_offsets, &
+        document_count, &
+        intersection_counts, &
+        union_counts, &
+        jaccard_scores &
+    )
+        integer(int64), intent(in) :: candidate_shingles(:)
+        integer(int64), intent(in) :: candidate_offsets(:)
+        integer, intent(in) :: candidate_count
+        integer(int64), intent(in) :: corpus_shingles(:)
+        integer(int64), intent(in) :: document_offsets(:)
+        integer, intent(in) :: document_count
+        integer(int64), intent(out) :: intersection_counts(document_count, candidate_count)
+        integer(int64), intent(out) :: union_counts(document_count, candidate_count)
+        real(real64), intent(out) :: jaccard_scores(document_count, candidate_count)
+
+        integer :: candidate_index
+        integer :: document_index
+        integer(int64) :: candidate_start
+        integer(int64) :: candidate_end
+        integer(int64) :: document_start
+        integer(int64) :: document_end
+
+        !$omp parallel do collapse(2) default(none) &
+        !$omp shared(candidate_shingles, candidate_offsets, candidate_count) &
+        !$omp shared(corpus_shingles, document_offsets, document_count) &
+        !$omp shared(intersection_counts, union_counts, jaccard_scores) &
+        !$omp private(candidate_index, document_index) &
+        !$omp private(candidate_start, candidate_end) &
+        !$omp private(document_start, document_end) &
+        !$omp schedule(static)
+
+        do candidate_index = 1, candidate_count
+            do document_index = 1, document_count
+                candidate_start = candidate_offsets(candidate_index) + 1_int64
+                candidate_end = candidate_offsets(candidate_index + 1)
+                document_start = document_offsets(document_index) + 1_int64
+                document_end = document_offsets(document_index + 1)
+                call jaccard_sorted( &
+                    candidate_shingles(candidate_start:candidate_end), &
+                    corpus_shingles(document_start:document_end), &
+                    intersection_counts(document_index, candidate_index), &
+                    union_counts(document_index, candidate_index), &
+                    jaccard_scores(document_index, candidate_index) &
+                )
+            end do
+        end do
+        !$omp end parallel do
+    end subroutine jaccard_batch_corpus
 
 end module fnlp_lexical_core

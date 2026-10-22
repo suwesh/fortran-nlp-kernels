@@ -154,6 +154,211 @@ nb::tuple run_jaccard(
         scores_object
     );
 }
+
+nb::tuple run_jaccard_batch(
+    const Int64Array &candidate_shingles,
+    const Int64Array &candidate_offsets,
+    const Int64Array &corpus_shingles,
+    const Int64Array &document_offsets
+)
+{
+    if (candidate_offsets.shape(0) < 2) {
+        throw std::invalid_argument(
+            "candidate_offsets must describe at least one candidate"
+        );
+    }
+
+    if (document_offsets.shape(0) < 2) {
+        throw std::invalid_argument(
+            "document_offsets must describe at least one document"
+        );
+    }
+
+    const auto *candidate_offset_data =
+        candidate_offsets.data();
+
+    const auto *document_offset_data =
+        document_offsets.data();
+
+    if (candidate_offset_data[0] != 0) {
+        throw std::invalid_argument(
+            "candidate_offsets must begin with zero"
+        );
+    }
+
+    if (document_offset_data[0] != 0) {
+        throw std::invalid_argument(
+            "document_offsets must begin with zero"
+        );
+    }
+
+    const std::size_t candidate_count_size =
+        candidate_offsets.shape(0) - 1;
+
+    const std::size_t document_count_size =
+        document_offsets.shape(0) - 1;
+
+    if (
+        candidate_count_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "candidate count exceeds the C int range"
+        );
+    }
+
+    if (
+        document_count_size >
+        static_cast<std::size_t>(
+            std::numeric_limits<int>::max()
+        )
+    ) {
+        throw std::overflow_error(
+            "document count exceeds the C int range"
+        );
+    }
+
+    const int candidate_count =
+        static_cast<int>(candidate_count_size);
+
+    const int document_count =
+        static_cast<int>(document_count_size);
+
+    if (
+        candidate_offset_data[candidate_count] !=
+        static_cast<std::int64_t>(
+            candidate_shingles.shape(0)
+        )
+    ) {
+        throw std::invalid_argument(
+            "final candidate offset must equal "
+            "candidate shingles length"
+        );
+    }
+
+    if (
+        document_offset_data[document_count] !=
+        static_cast<std::int64_t>(
+            corpus_shingles.shape(0)
+        )
+    ) {
+        throw std::invalid_argument(
+            "final document offset must equal corpus length"
+        );
+    }
+
+    for (
+        int index = 1;
+        index <= candidate_count;
+        ++index
+    ) {
+        if (
+            candidate_offset_data[index] <
+            candidate_offset_data[index - 1]
+        ) {
+            throw std::invalid_argument(
+                "candidate_offsets must be nondecreasing"
+            );
+        }
+    }
+
+    for (
+        int index = 1;
+        index <= document_count;
+        ++index
+    ) {
+        if (
+            document_offset_data[index] <
+            document_offset_data[index - 1]
+        ) {
+            throw std::invalid_argument(
+                "document_offsets must be nondecreasing"
+            );
+        }
+    }
+
+    nb::module_ numpy =
+        nb::module_::import_("numpy");
+
+    const nb::tuple output_shape =
+        nb::make_tuple(
+            document_count,
+            candidate_count
+        );
+
+    nb::object intersections_object =
+        numpy.attr("empty")(
+            output_shape,
+            "int64",
+            "F"
+        );
+
+    nb::object unions_object =
+        numpy.attr("empty")(
+            output_shape,
+            "int64",
+            "F"
+        );
+
+    nb::object scores_object =
+        numpy.attr("empty")(
+            output_shape,
+            "float64",
+            "F"
+        );
+
+    auto intersections =
+        nb::cast<
+            nb::ndarray<nb::numpy, std::int64_t>
+        >(
+            intersections_object
+        );
+
+    auto unions =
+        nb::cast<
+            nb::ndarray<nb::numpy, std::int64_t>
+        >(
+            unions_object
+        );
+
+    auto scores =
+        nb::cast<
+            nb::ndarray<nb::numpy, double>
+        >(
+            scores_object
+        );
+
+    {
+        nb::gil_scoped_release release;
+
+        fnlp_jaccard_batch_corpus(
+            candidate_shingles.data(),
+            static_cast<std::int64_t>(
+                candidate_shingles.shape(0)
+            ),
+            candidate_offsets.data(),
+            candidate_count,
+            corpus_shingles.data(),
+            static_cast<std::int64_t>(
+                corpus_shingles.shape(0)
+            ),
+            document_offsets.data(),
+            document_count,
+            intersections.data(),
+            unions.data(),
+            scores.data()
+        );
+    }
+
+    return nb::make_tuple(
+        intersections_object,
+        unions_object,
+        scores_object
+    );
+}
+
 nb::tuple run_vector_search(
     const Float32Vector &query,
     const Float32Database &database,
@@ -567,6 +772,25 @@ NB_MODULE(_cpu, module)
             );
         },
         nb::arg("candidate_shingles"),
+        nb::arg("corpus_shingles"),
+        nb::arg("document_offsets")
+    );
+
+    module.def(
+        "jaccard_batch_corpus",
+        [](const Int64Array &candidate_shingles,
+           const Int64Array &candidate_offsets,
+           const Int64Array &corpus_shingles,
+           const Int64Array &document_offsets) {
+            return run_jaccard_batch(
+                candidate_shingles,
+                candidate_offsets,
+                corpus_shingles,
+                document_offsets
+            );
+        },
+        nb::arg("candidate_shingles"),
+        nb::arg("candidate_offsets"),
         nb::arg("corpus_shingles"),
         nb::arg("document_offsets")
     );

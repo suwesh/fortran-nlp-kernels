@@ -202,6 +202,7 @@ contains
                 similarities(vector_index) &
             )
         end do
+        !$omp end parallel do
     end subroutine ip_database_openmp
 
     ! Exact squared L2 search using serial database scoring.
