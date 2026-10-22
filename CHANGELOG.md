@@ -8,6 +8,8 @@ APIs may evolve before the stable `0.1.0` release.
 
 ## [Unreleased]
 
+## [0.1.0b2] - 2026-10-22
+
 ### Added
 
 - Automatic backend selection through `backend="auto"`.
@@ -31,15 +33,6 @@ APIs may evolve before the stable `0.1.0` release.
 - Descending NumPy reference ranking now preserves deterministic positional ordering for tied similarity scores.
 - Development and release validation now cover 98 Python tests.
 - Linux wheels are built and tested across CPython 3.10–3.13.
-
-### Planned
-
-- Benchmark-informed automatic backend selection.
-- Optional document and vector IDs.
-- Handwritten serial and OpenMP batched-query backends.
-- Optimized exact top-k selection.
-- Automated PyPI Trusted Publishing.
-- CPU performance evaluation and CUDA Fortran backends.
 
 ## [0.1.0b1] - 2026-10-21
 
@@ -82,5 +75,6 @@ APIs may evolve before the stable `0.1.0` release.
 - CUDA and GPU backends are not included.
 - The initial binary wheel targets Linux x86-64 and CPython 3.12.
 
-[Unreleased]: https://github.com/suwesh/fortran-nlp-kernels/compare/v0.1.0b1...HEAD
+[Unreleased]: https://github.com/suwesh/fortran-nlp-kernels/compare/v0.1.0b2...HEAD
+[0.1.0b2]: https://github.com/suwesh/fortran-nlp-kernels/compare/v0.1.0b1...v0.1.0b2
 [0.1.0b1]: https://github.com/suwesh/fortran-nlp-kernels/releases/tag/v0.1.0b1

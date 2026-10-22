@@ -10,11 +10,13 @@
 
 `fortran-nlp-kernels` provides a clean Python API while executing the computational kernels in compiled native code. The initial CPU beta includes exact word-shingle Jaccard search, exact inner-product search, exact squared-L2 search, cosine similarity, multicore OpenMP execution, and batched BLAS search.
 
-## Beta status
+### Beta status
 
-`0.1.0b1` is the first Linux CPU beta.
+`0.1.0b2` is the current Linux CPU beta.
 
-The current beta is intended for evaluation, reproducible systems work, and early integration. Public APIs may still evolve before the stable `0.1.0` release.
+This release adds batched lexical Jaccard search, automatic backend selection, expanded input validation, package-version exposure, and tested manylinux wheels for CPython 3.10–3.13.
+
+The beta is intended for evaluation, reproducible systems work, and early integration. Public APIs may still evolve before the stable `0.1.0` release.
 
 ### Included
 
@@ -31,16 +33,19 @@ The current beta is intended for evaluation, reproducible systems work, and earl
 - Exact top-k selection
 - NumPy correctness references
 - Python, native Fortran, C ABI, and integration tests
+- Batched lexical Jaccard search
+- OpenMP parallelism across candidate-document pairs
+- Automatic backend selection
+- CPython 3.10–3.13 manylinux wheels
 
 ### Current limitations
 
 - Linux x86-64 only
-- The published beta wheel targets CPython 3.12
 - Result IDs are currently zero-based positional indexes
-- Batched search currently requires `backend="fortran_blas"`
+- Batched lexical search requires `backend="fortran_openmp"` or `backend="auto"`
+- Batched vector search requires `backend="fortran_blas"` or `backend="auto"`
 - Handwritten top-k selection currently uses an `O(Nk)` reference implementation
 - CUDA Fortran and GPU backends are not included in this beta
-- The Linux wheel currently expects OpenBLAS, GNU Fortran runtime, and GNU OpenMP runtime libraries on the host
 
 ## Architecture
 
@@ -91,12 +96,9 @@ The source package declares Python 3.10 or newer, but this beta has currently be
 
 ### Installing the prebuilt Linux wheel
 
-On Ubuntu or Debian-based systems, install the runtime libraries:
-
-```bash
-sudo apt update
-sudo apt install libopenblas0 libgomp1 libgfortran5
-```
+The published manylinux wheel bundles the required non-policy native
+libraries. No Fortran compiler or OpenBLAS development package is needed
+when installing a compatible prebuilt wheel.
 
 ### Building from source
 
@@ -111,9 +113,9 @@ A source build also requires a supported Python environment and `pip`. Build-tim
 
 ## Installation
 
-### PyPI beta
+### PyPI Beta
 
-After the beta is published:
+Install the latest available pre-release:
 
 ```bash
 python -m pip install --pre fortran-nlp-kernels
@@ -122,14 +124,15 @@ python -m pip install --pre fortran-nlp-kernels
 To request this exact beta:
 
 ```bash
-python -m pip install fortran-nlp-kernels==0.1.0b1
+python -m pip install fortran-nlp-kernels==0.1.0b2
 ```
 
 ### Local wheel
 
-```bash
-python -m pip install \
-  dist/fortran_nlp_kernels-0.1.0b1-cp312-cp312-linux_x86_64.whl
+Download the wheel matching the installed CPython version from the GitHub release or CI artifacts, then install it by path: 
+```bash 
+python -m pip install \ 
+    ./fortran_nlp_kernels-0.1.0b2-cp312-cp312-manylinux_2_28_x86_64.whl
 ```
 
 ### Editable source installation
@@ -178,6 +181,63 @@ JaccardResult(
 ```
 
 Text preprocessing performs Unicode normalization, case folding, fixed-size word shingling, deterministic 64-bit hashing, sorting, and deduplication before invoking the native kernel.
+
+### Batched lexical Jaccard search
+
+`JaccardIndex.search_batch()` compares multiple candidate texts against
+the same indexed corpus.
+
+```python
+from fortran_nlp.lexical import JaccardIndex
+
+index = JaccardIndex(
+    [
+        "reset the account password",
+        "update seller information",
+        "create a new loan application",
+    ],
+    backend="auto",
+)
+
+batch_results = index.search_batch(
+    [
+        "how to reset the account password",
+        "seller information update",
+    ],
+    k=2,
+    minimum_score=0.01,
+)
+
+for candidate_index, candidate_results in enumerate(batch_results):
+    print(candidate_index, candidate_results)
+```
+
+The return type is:
+
+```python
+list[list[JaccardResult]]
+```
+
+The outer list contains one entry per candidate. Each inner list contains
+the ranked corpus matches for that candidate.
+
+Candidate shingles are stored in a packed variable-length representation
+with candidate offsets. The OpenMP backend distributes independent
+candidate-document comparisons across threads.
+
+Batched lexical search requires:
+
+```python
+backend="fortran_openmp"
+```
+
+or:
+
+```python
+backend="auto"
+```
+
+Use `OMP_NUM_THREADS` to control parallel execution.
 
 ## Exact vector search
 
@@ -404,9 +464,10 @@ package-metadata tests
 wheel smoke tests
 ```
 
-The current development branch passes **98 Python tests** covering
-lexical search, exact vector search, native bindings, automatic backend
-selection, memory layouts, input validation, and package metadata.
+The `0.1.0b2` release passes **98 Python tests** covering lexical search,
+batched lexical search, exact vector search, native bindings, automatic
+backend selection, memory layouts, input validation, deterministic tie
+handling, and package metadata.
 
 Run the Python test suite:
 
@@ -462,11 +523,14 @@ rm -rf dist/ build/ .mesonpy-*
 python -m build
 ```
 
-Expected beta artifacts:
+Expected release artifacts:
 
 ```text
-dist/fortran_nlp_kernels-0.1.0b1-cp312-cp312-linux_x86_64.whl
-dist/fortran_nlp_kernels-0.1.0b1.tar.gz
+fortran_nlp_kernels-0.1.0b2-cp310-cp310-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0b2-cp311-cp311-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0b2-cp312-cp312-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0b2-cp313-cp313-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0b2.tar.gz
 ```
 
 Validate distribution metadata and README rendering:
@@ -498,8 +562,9 @@ Working technical-report title:
 Planned follow-up work includes:
 
 - benchmark-informed automatic backend selection;
+- benchmark-informed OpenMP scheduling for batched lexical search;
 - optional document and vector IDs;
-- handwritten serial and OpenMP batched-query baselines;
+- handwritten serial and OpenMP batched vector-search baselines;
 - optimized exact top-k selection;
 - CPU performance evaluation against NumPy, C++, and FAISS;
 - automated PyPI Trusted Publishing;

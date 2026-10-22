@@ -1,7 +1,7 @@
 project(
   'fortran-nlp-kernels',
   ['cpp', 'fortran'],
-  version: '0.1.0b1',
+  version: '0.1.0b2',
   meson_version: '>=1.3.0',
   default_options: [
     'cpp_std=c++17',
