@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "package_version": "0.1.0b2",
+  "python_version": "3.12.3",
+  "numpy_version": "2.5.1",
+  "git_commit": "97b644efa1e19891361cdc05ba3cb6f903f984cf",
+  "shingle_size": 3,
+  "document_count": 372,
+  "total_corpus_shingles": 64577,
+  "minimum_document_shingles": 20,
+  "median_document_shingles": 135.0,
+  "mean_document_shingles": 173.59408602150538,
+  "maximum_document_shingles": 4015,
+  "document_shingle_standard_deviation": 266.0275053841968,
+  "zero_shingle_document_count": 0,
+  "source_document_counts": {
+    "faqs": 67,
+    "manuals": 38,
+    "troubleshooting": 240,
+    "video": 27
+  },
+  "source_statistics": {
+    "faqs": {
+      "metadata_rows": 67,
+      "lexical_documents": 67,
+      "lexical_builder": "direct"
+    },
+    "manuals": {
+      "metadata_rows": 141,
+      "lexical_documents": 38,
+      "lexical_builder": "reconstruct_manuals"
+    },
+    "troubleshooting": {
+      "metadata_rows": 240,
+      "lexical_documents": 240,
+      "lexical_builder": "direct"
+    },
+    "video": {
+      "metadata_rows": 27,
+      "lexical_documents": 27,
+      "lexical_builder": "direct"
+    }
+  },
+  "memory_bytes": {
+    "corpus_shingles": 516616,
+    "document_offsets": 2984,
+    "packed_input_total": 519600,
+    "single_query_native_outputs": 8928,
+    "single_query_native_working_set": 528528
+  }
+}
