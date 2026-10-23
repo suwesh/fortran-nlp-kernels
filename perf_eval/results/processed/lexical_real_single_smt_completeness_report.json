@@ -1,0 +1,22 @@
+{
+  "raw_measurement_rows": 6480,
+  "unique_smt_configurations": 72,
+  "expected_smt_configurations": 72,
+  "is_complete": true,
+  "candidate_count": 8,
+  "replication_factors": [
+    10,
+    100,
+    1000
+  ],
+  "smt_thread_counts": [
+    8,
+    10,
+    12
+  ],
+  "duplicate_run_rows": 0,
+  "repetition_mismatch_configurations": 0,
+  "package_versions": [
+    "0.1.0b2"
+  ]
+}
