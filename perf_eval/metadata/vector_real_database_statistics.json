@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "package_version": "0.1.0b2",
+  "python_version": "3.12.3",
+  "numpy_version": "2.5.1",
+  "git_commit": "5257aac57f17b6add429393af2240de0b3f44890",
+  "vector_count": 475,
+  "dimension": 1024,
+  "dtype": "float32",
+  "c_contiguous": true,
+  "finite": true,
+  "minimum_norm": 0.9999998807907104,
+  "median_norm": 1.0,
+  "mean_norm": 1.0,
+  "maximum_norm": 1.000000238418579,
+  "zero_norm_vectors": 0,
+  "maximum_absolute_norm_error_from_one": 2.384185791015625e-07,
+  "source_statistics": {
+    "faqs": {
+      "metadata_rows": 67,
+      "vector_count": 67,
+      "dimension": 1024,
+      "dtype": "float32",
+      "c_contiguous": true,
+      "minimum_norm": 0.9999999403953552,
+      "median_norm": 1.0,
+      "mean_norm": 1.0,
+      "maximum_norm": 1.0,
+      "zero_norm_vectors": 0
+    },
+    "manuals": {
+      "metadata_rows": 141,
+      "vector_count": 141,
+      "dimension": 1024,
+      "dtype": "float32",
+      "c_contiguous": true,
+      "minimum_norm": 0.9999999403953552,
+      "median_norm": 1.0,
+      "mean_norm": 1.0,
+      "maximum_norm": 1.0,
+      "zero_norm_vectors": 0
+    },
+    "troubleshooting": {
+      "metadata_rows": 240,
+      "vector_count": 240,
+      "dimension": 1024,
+      "dtype": "float32",
+      "c_contiguous": true,
+      "minimum_norm": 0.9999998807907104,
+      "median_norm": 1.0,
+      "mean_norm": 1.0,
+      "maximum_norm": 1.000000238418579,
+      "zero_norm_vectors": 0
+    },
+    "video": {
+      "metadata_rows": 27,
+      "vector_count": 27,
+      "dimension": 1024,
+      "dtype": "float32",
+      "c_contiguous": true,
+      "minimum_norm": 0.9999999403953552,
+      "median_norm": 1.0,
+      "mean_norm": 1.0,
+      "maximum_norm": 1.0,
+      "zero_norm_vectors": 0
+    }
+  },
+  "memory_bytes": {
+    "database_vectors": 1945600,
+    "single_query_vector": 4096,
+    "single_query_scores": 1900,
+    "single_query_native_working_set": 1951596
+  },
+  "metric_relationships": {
+    "unit_normalized": true,
+    "cosine_equals_inner_product": true,
+    "squared_l2_equals_two_minus_two_inner_product": true
+  }
+}
