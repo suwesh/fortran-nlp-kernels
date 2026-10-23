@@ -38,10 +38,82 @@ def resolve_path(path_text: str) -> Path:
 
     return path.resolve()
 
+def select_fractional_corpus(
+    *,
+    base_corpus: np.ndarray,
+    base_offsets: np.ndarray,
+    document_sources: np.ndarray,
+    corpus_fraction: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    if not 0.0 < corpus_fraction <= 1.0:
+        raise ValueError(
+            "corpus-fraction must be in the interval (0, 1]"
+        )
+    if corpus_fraction == 1.0:
+        return base_corpus, base_offsets
+    selected_indices: list[int] = []
+    for source in dict.fromkeys(
+        document_sources.tolist()
+    ):
+        source_indices = np.flatnonzero(
+            document_sources == source
+        )
+        selected_count = max(
+            1,
+            int(round(
+                source_indices.size
+                * corpus_fraction
+            )),
+        )
+        # Evenly spaced deterministic selection within each source.
+        selection_positions = np.linspace(
+            0,
+            source_indices.size - 1,
+            num=selected_count,
+            dtype=np.int64,
+        )
+        selected_indices.extend(
+            source_indices[
+                selection_positions
+            ].tolist()
+        )
+    selected_indices = sorted(
+        set(selected_indices)
+    )
+    selected_documents = []
+    for document_index in selected_indices:
+        start = int(base_offsets[document_index])
+        end = int(base_offsets[document_index + 1])
+        selected_documents.append(
+            base_corpus[start:end]
+        )
+    selected_lengths = np.array(
+        [
+            document.size
+            for document in selected_documents
+        ],
+        dtype=np.int64,
+    )
+    selected_offsets = np.empty(
+        selected_lengths.size + 1,
+        dtype=np.int64,
+    )
+    selected_offsets[0] = 0
+    np.cumsum(
+        selected_lengths,
+        dtype=np.int64,
+        out=selected_offsets[1:],
+    )
+    selected_corpus = np.ascontiguousarray(
+        np.concatenate(selected_documents),
+        dtype=np.int64,
+    )
+    return selected_corpus, selected_offsets
 
 def load_inputs(
     config_path: Path,
     candidate_id: str,
+    corpus_fraction: float,
     replication_factor: int,
 ):
     with config_path.open(
@@ -76,6 +148,11 @@ def load_inputs(
             packed["shingle_size"]
         )
 
+        document_sources = np.array(
+            packed["document_sources"],
+            copy=True,
+        )
+
     candidate = None
 
     with candidate_path.open(
@@ -97,6 +174,13 @@ def load_inputs(
     candidate_shingles = encode_text_shingles(
         candidate["text"],
         shingle_size=shingle_size,
+    )
+
+    base_corpus, base_offsets = select_fractional_corpus(
+        base_corpus=base_corpus,
+        base_offsets=base_offsets,
+        document_sources=document_sources,
+        corpus_fraction=corpus_fraction,
     )
 
     base_lengths = np.diff(base_offsets)
@@ -187,6 +271,12 @@ def main() -> None:
     )
 
     parser.add_argument(
+        "--corpus-fraction",
+        type=float,
+        default=1.0,
+    )
+
+    parser.add_argument(
         "--replication-factor",
         type=int,
         required=True,
@@ -231,6 +321,7 @@ def main() -> None:
     ) = load_inputs(
         arguments.config.resolve(),
         arguments.candidate_id,
+        arguments.corpus_fraction,
         arguments.replication_factor,
     )
 
@@ -317,6 +408,7 @@ def main() -> None:
         "candidate_source",
         "candidate_category",
         "candidate_shingles",
+        "corpus_fraction",
         "replication_factor",
         "document_count",
         "corpus_shingles",
@@ -389,6 +481,9 @@ def main() -> None:
                     ),
                     "candidate_shingles": (
                         candidate_shingles.size
+                    ),
+                    "corpus_fraction": (
+                        arguments.corpus_fraction
                     ),
                     "replication_factor": (
                         arguments.replication_factor

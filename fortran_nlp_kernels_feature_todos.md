@@ -60,13 +60,15 @@
 
 ### Lexical
 
-- [ ] Python set correctness oracle
-- [ ] NumPy practical baseline
-- [ ] C++ serial equivalent
-- [ ] C++ OpenMP equivalent
-- [ ] Fortran serial/OpenMP thread scaling
-- [ ] Serial/OpenMP crossover analysis
-- [ ] Investigate SIMD and alternative sorted-set intersection algorithms
+- [x] Validate exact serial, OpenMP, and batched OpenMP equivalence
+- [x] Evaluate serial and OpenMP physical-core scaling
+- [x] Identify serial/OpenMP crossover behavior
+- [x] Measure latency, throughput, speedup, parallel efficiency, candidate-size sensitivity, and estimated native memory growth
+- [ ] Publish reproducible configurations, raw measurements, processed summaries, benchmark tables, and figures for single-candidate search
+- [ ] Evaluate OpenMP batched-candidate scaling
+- [ ] Evaluate 6-, 8-, and 12-thread SMT sensitivity
+- [ ] Measure native-binding versus public-API latency
+- [ ] Derive benchmark-informed automatic backend thresholds
 
 ### Vector Search
 
@@ -102,6 +104,8 @@
 - [ ] Measure kernel-only, binding, and end-to-end latency separately
 - [ ] Report throughput, speedup, parallel efficiency, memory use, and crossover points
 - [ ] Publish reproducible configurations, raw results, tables, and figures
+- [ ] C++ serial equivalent
+- [ ] C++ OpenMP equivalent
 - [ ] Write the technical report:
 
 > **Fortran Kernels for NLP: Exact Lexical and Vector Similarity Search Across Multicore CPUs and NVIDIA GPUs**

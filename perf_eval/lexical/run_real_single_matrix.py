@@ -10,106 +10,90 @@ import sys
 
 import yaml
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-
-DEFAULT_CONFIG = (
-    REPOSITORY_ROOT
-    / "perf_eval/config/lexical_cpu_matrix.local.yaml"
-)
-
-DEFAULT_OUTPUT = (
-    REPOSITORY_ROOT
-    / "perf_eval/results/raw/lexical_real_single_raw.csv"
-)
+DEFAULT_CONFIG = REPOSITORY_ROOT / "perf_eval/config/lexical_cpu_matrix.local.yaml"
+DEFAULT_OUTPUT = REPOSITORY_ROOT / "perf_eval/results/raw/lexical_real_single_raw.csv"
 
 
 def resolve_path(path_text: str) -> Path:
     path = Path(path_text).expanduser()
-
-    if not path.is_absolute():
-        path = REPOSITORY_ROOT / path
-
-    return path.resolve()
+    return path.resolve() if path.is_absolute() else (REPOSITORY_ROOT / path).resolve()
 
 
 def load_config(path: Path) -> dict:
-    with path.open(
-        "r",
-        encoding="utf-8",
-    ) as file:
+    with path.open("r", encoding="utf-8") as file:
         config = yaml.safe_load(file)
-
     if not isinstance(config, dict):
-        raise ValueError(
-            "Configuration must contain a YAML mapping"
-        )
-
+        raise ValueError("Configuration must contain a YAML mapping")
     return config
 
 
-def load_candidate_ids(
-    candidate_path: Path,
-) -> list[str]:
+def load_candidate_ids(candidate_path: Path) -> list[str]:
     candidate_ids = []
-
-    with candidate_path.open(
-        "r",
-        encoding="utf-8",
-    ) as file:
+    with candidate_path.open("r", encoding="utf-8") as file:
         for line in file:
-            if not line.strip():
-                continue
-
-            candidate = json.loads(line)
-
-            candidate_ids.append(
-                candidate["candidate_id"]
-            )
-
+            if line.strip():
+                candidate_ids.append(json.loads(line)["candidate_id"])
     if not candidate_ids:
-        raise ValueError(
-            "Candidate file contains no candidates"
-        )
-
+        raise ValueError("Candidate file contains no candidates")
     return candidate_ids
+
+
+def build_workload_scales(
+    corpus_fractions: list[float],
+    replication_factors: list[int],
+) -> list[tuple[float, int]]:
+    # Fractions below 1.0 are measured only once, without replication.
+    fractional_scales = [
+        (fraction, 1)
+        for fraction in corpus_fractions
+        if fraction < 1.0
+    ]
+    # Full corpus is measured at every configured replication factor.
+    replicated_scales = [
+        (1.0, replication_factor)
+        for replication_factor in replication_factors
+    ]
+    scales = fractional_scales + replicated_scales
+    if len(scales) != len(set(scales)):
+        raise ValueError("Duplicate workload scales were configured")
+    return scales
 
 
 def completed_configurations(
     output_path: Path,
-) -> set[tuple[str, int, str, int]]:
-    """
-    Return configurations already present in the raw CSV.
-
-    Key:
-        candidate_id,
-        replication_factor,
-        backend,
-        thread_count
-    """
-
+) -> set[tuple[str, float, int, str, int]]:
     if not output_path.exists():
         return set()
 
     completed = set()
-
-    with output_path.open(
-        "r",
-        newline="",
-        encoding="utf-8",
-    ) as file:
+    with output_path.open("r", newline="", encoding="utf-8") as file:
         reader = csv.DictReader(file)
-
+        required = {
+            "candidate_id",
+            "corpus_fraction",
+            "replication_factor",
+            "backend",
+            "thread_count",
+        }
+        if reader.fieldnames is None:
+            return set()
+        missing = required.difference(reader.fieldnames)
+        if missing:
+            raise ValueError(
+                "Existing CSV has the old schema. Run with --fresh. "
+                f"Missing: {', '.join(sorted(missing))}"
+            )
         for row in reader:
             completed.add(
                 (
                     row["candidate_id"],
+                    float(row["corpus_fraction"]),
                     int(row["replication_factor"]),
                     row["backend"],
                     int(row["thread_count"]),
                 )
             )
-
     return completed
 
 
@@ -120,61 +104,19 @@ def build_environment(
     openmp_config: dict,
 ) -> dict[str, str]:
     environment = os.environ.copy()
-
-    environment.pop(
-        "PYTHONPATH",
-        None,
-    )
-
-    environment["OMP_NUM_THREADS"] = str(
-        thread_count
-    )
-
-    environment["OMP_DYNAMIC"] = str(
-        openmp_config.get(
-            "dynamic",
-            "FALSE",
-        )
-    )
-
+    environment.pop("PYTHONPATH", None)
+    environment["OMP_NUM_THREADS"] = str(thread_count)
+    environment["OMP_DYNAMIC"] = str(openmp_config.get("dynamic", "FALSE"))
     environment["OPENBLAS_NUM_THREADS"] = "1"
 
     if backend == "openmp":
-        environment["OMP_PROC_BIND"] = str(
-            openmp_config.get(
-                "proc_bind",
-                "close",
-            )
-        )
-
-        environment["OMP_PLACES"] = str(
-            openmp_config.get(
-                "places",
-                "cores",
-            )
-        )
-
-        environment["OMP_WAIT_POLICY"] = str(
-            openmp_config.get(
-                "wait_policy",
-                "active",
-            )
-        )
+        environment["OMP_PROC_BIND"] = str(openmp_config.get("proc_bind", "close"))
+        environment["OMP_PLACES"] = str(openmp_config.get("places", "cores"))
+        environment["OMP_WAIT_POLICY"] = str(openmp_config.get("wait_policy", "active"))
     else:
-        environment.pop(
-            "OMP_PROC_BIND",
-            None,
-        )
-
-        environment.pop(
-            "OMP_PLACES",
-            None,
-        )
-
-        environment.pop(
-            "OMP_WAIT_POLICY",
-            None,
-        )
+        environment.pop("OMP_PROC_BIND", None)
+        environment.pop("OMP_PLACES", None)
+        environment.pop("OMP_WAIT_POLICY", None)
 
     return environment
 
@@ -184,6 +126,7 @@ def run_configuration(
     config_path: Path,
     output_path: Path,
     candidate_id: str,
+    corpus_fraction: float,
     replication_factor: int,
     backend: str,
     thread_count: int,
@@ -202,21 +145,16 @@ def run_configuration(
         backend,
         "--candidate-id",
         candidate_id,
+        "--corpus-fraction",
+        str(corpus_fraction),
         "--replication-factor",
         str(replication_factor),
     ]
 
-    environment = build_environment(
-        backend=backend,
-        thread_count=thread_count,
-        openmp_config=openmp_config,
-    )
-
     print(
-        f"{candidate_id} | "
-        f"rf={replication_factor} | "
-        f"{backend} | "
-        f"threads={thread_count}"
+        f"{candidate_id} | fraction={corpus_fraction:.2f} | "
+        f"rf={replication_factor} | {backend} | threads={thread_count}",
+        flush=True,
     )
 
     if dry_run:
@@ -225,159 +163,78 @@ def run_configuration(
     subprocess.run(
         command,
         cwd=REPOSITORY_ROOT,
-        env=environment,
+        env=build_environment(
+            backend=backend,
+            thread_count=thread_count,
+            openmp_config=openmp_config,
+        ),
         check=True,
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Run the complete real-corpus lexical "
-            "physical-core benchmark matrix."
-        )
-    )
-
-    parser.add_argument(
-        "--config",
-        type=Path,
-        default=DEFAULT_CONFIG,
-    )
-
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=DEFAULT_OUTPUT,
-    )
-
-    parser.add_argument(
-        "--fresh",
-        action="store_true",
-        help="Delete the existing formal CSV before starting.",
-    )
-
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Print configurations without running them.",
-    )
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--fresh", action="store_true")
+    parser.add_argument("--dry-run", action="store_true")
     arguments = parser.parse_args()
 
-    config_path = arguments.config.resolve()
-    output_path = arguments.output.resolve()
-
+    config_path = arguments.config.expanduser().resolve()
+    output_path = arguments.output.expanduser().resolve()
     config = load_config(config_path)
 
-    candidate_path = resolve_path(
-        config["candidates"]["input_path"]
-    )
-
     candidate_ids = load_candidate_ids(
-        candidate_path
+        resolve_path(config["candidates"]["input_path"])
     )
+    corpus_fractions = [float(value) for value in config["corpus_fractions"]]
+    replication_factors = [int(value) for value in config["replication_factors"]]
+    thread_counts = [int(value) for value in config["physical_core_thread_counts"]]
 
-    replication_factors = [
-        int(value)
-        for value in config["replication_factors"]
-    ]d_counts = [
-        int(value)
-        for value in config[
-            "physical_core_thread_counts"
-        ]
-    ]
+    if any(not 0.0 < fraction <= 1.0 for fraction in corpus_fractions):
+        raise ValueError("Every corpus fraction must be in (0, 1]")
+    if any(factor < 1 for factor in replication_factors):
+        raise ValueError("Every replication factor must be at least 1")
 
-    openmp_config = config.get(
-        "openmp",
-        {},
+    workload_scales = build_workload_scales(
+        corpus_fractions,
+        replication_factors,
     )
+    openmp_config = config.get("openmp", {})
 
     if arguments.fresh and output_path.exists():
         output_path.unlink()
 
-    completed = completed_configurations(
-        output_path
-    )
-
-    total_configurations = (
-        len(candidate_ids)
-        * len(replication_factors)
-        * (
-            1
-            + len(thread_counts)
-        )
-    )
-
-    completed_now = 0
+    completed = completed_configurations(output_path)
+    total = len(candidate_ids) * len(workload_scales) * (1 + len(thread_counts))
+    executed = 0
     skipped = 0
 
     print("Real lexical physical-core matrix")
     print("=" * 72)
-
-    print(
-        f"Candidates: {len(candidate_ids)}"
-    )
-
-    print(
-        "Replication factors: "
-        f"{replication_factors}"
-    )
-
-    print(
-        "OpenMP threads: "
-        f"{thread_counts}"
-    )
-
-    print(
-        f"Configurations: {total_configurations}"
-    )
-
-    print(
-        f"Output: {output_path}"
-    )
-
+    print(f"Candidates: {len(candidate_ids)}")
+    print(f"Workload scales: {workload_scales}")
+    print(f"OpenMP threads: {thread_counts}")
+    print(f"Configurations: {total}")
+    print(f"Output: {output_path}")
     print("=" * 72)
 
     for candidate_id in candidate_ids:
-        for replication_factor in (
-            replication_factors
-        ):
-            # Dedicated serial baseline once.
-            serial_key = (
-                candidate_id,
-                replication_factor,
-                "serial",
-                1,
-            )
+        for corpus_fraction, replication_factor in workload_scales:
+            variants = [("serial", 1)] + [
+                ("openmp", thread_count)
+                for thread_count in thread_counts
+            ]
 
-            if serial_key in completed:
-                skipped += 1
-            else:
-                run_configuration(
-                    config_path=config_path,
-                    output_path=output_path,
-                    candidate_id=candidate_id,
-                    replication_factor=(
-                        replication_factor
-                    ),
-                    backend="serial",
-                    thread_count=1,
-                    openmp_config=openmp_config,
-                    dry_run=arguments.dry_run,
-                )
-
-                completed_now += 1
-
-            # OpenMP physical-core scaling.
-            for thread_count in thread_counts:
-                openmp_key = (
+            for backend, thread_count in variants:
+                key = (
                     candidate_id,
+                    corpus_fraction,
                     replication_factor,
-                    "openmp",
+                    backend,
                     thread_count,
                 )
-
-                if openmp_key in completed:
+                if key in completed:
                     skipped += 1
                     continue
 
@@ -385,21 +242,17 @@ def main() -> None:
                     config_path=config_path,
                     output_path=output_path,
                     candidate_id=candidate_id,
-                    replication_factor=(
-                        replication_factor
-                    ),
-                    backend="openmp",
+                    corpus_fraction=corpus_fraction,
+                    replication_factor=replication_factor,
+                    backend=backend,
                     thread_count=thread_count,
                     openmp_config=openmp_config,
                     dry_run=arguments.dry_run,
                 )
-
-                completed_now += 1
+                executed += 1
 
     print("=" * 72)
-    print(
-        f"Executed configurations: {completed_now}"
-    )
+    print(f"Executed configurations: {executed}")
     print(f"Skipped existing: {skipped}")
     print("Physical-core matrix: COMPLETE")
 
