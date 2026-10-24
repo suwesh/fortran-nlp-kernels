@@ -29,3 +29,4 @@ pypi_secret.json
 
 perf_eval/data/private/
 perf_eval/data/packed/
+perf_eval/config/lexical_cpu_matrix.local.yaml
