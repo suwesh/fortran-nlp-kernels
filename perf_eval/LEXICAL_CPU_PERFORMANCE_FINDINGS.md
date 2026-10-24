@@ -356,7 +356,7 @@ The experiment contained 252 complete configurations.
    output bytes = 24 * document_count * candidate_count
    ```
 
-   At 372,000 documents and batch size 64, output matrices required approximately 571 MiB. Together with the packed corpus, the native working set exceeded approximately 1 GiB.
+   At 372,000 documents and batch size 64, the processed analytical model reported 544.922 MiB of output and approximately 1,040.769 MiB total native working-set memory.
 
 ### Physical-core batch-policy implication
 
@@ -424,7 +424,292 @@ This produced 54 new SMT configurations.
 
 ---
 
-## 9. Important methodological caveats
+
+### 9. Exact processed-data validation and policy extraction
+
+The figure-level interpretation above was rechecked against the processed configuration and aggregated summaries before the `0.1.0` release work began.
+
+#### 9.1 Completeness and integrity
+
+```text
+Single-candidate physical-core study:
+  600 / 600 configurations
+  171,600 raw measurements
+
+Single-candidate SMT study:
+  72 / 72 configurations
+  6,480 raw measurements
+
+Batched physical-core study:
+  252 / 252 configurations
+  27,720 raw measurements
+
+Batched SMT study:
+  54 / 54 configurations
+  1,440 raw measurements
+
+Combined lexical study:
+  978 / 978 configurations
+  207,240 raw measurements
+```
+
+All four completeness reports recorded:
+
+```text
+is_complete: true
+duplicate run rows: 0
+repetition-count mismatches: 0
+execution variants: matched
+package version: 0.1.0b2
+```
+
+#### 9.2 Exact aggregated single-candidate winners
+
+The lowest raw aggregated median was OpenMP even at the smallest source-stratified fractions, but the tiny-workload results had very high variability and only marginal gains in the first crossover rows.
+
+```text
+Docs     Corpus shingles   Winner     Median latency   Median CV   Speedup
+18       5,591             OpenMP-2     0.009372 ms      0.3648     1.0631x
+38       8,125             OpenMP-4     0.010946 ms      0.4119     2.4934x
+94       16,360            OpenMP-6     0.021230 ms      0.6778     3.2592x
+187      31,327            OpenMP-6     0.046465 ms      0.3416     3.1362x
+278      46,553            OpenMP-6     0.087346 ms      0.4508     2.9533x
+372      64,577            OpenMP-6     0.122840 ms      0.4201     3.0773x
+744      129,154           OpenMP-6     0.189796 ms      0.2716     3.5871x
+1,860    322,885           OpenMP-6     0.476248 ms      0.1212     3.6665x
+3,720    645,770           OpenMP-6     0.917201 ms      0.1838     3.9100x
+9,300    1,614,425         OpenMP-6     2.294783 ms      0.1182     4.0003x
+18,600   3,228,850         OpenMP-6     4.603344 ms      0.1563     4.0012x
+37,200   6,457,700         OpenMP-6     9.204188 ms      0.1056     3.8468x
+93,000   16,144,250       OpenMP-6    23.071373 ms      0.0827     4.0957x
+186,000  32,288,500       OpenMP-6    45.249686 ms      0.0338     4.0384x
+372,000  64,577,000       OpenMP-6    89.271662 ms      0.0606     4.0462x
+```
+
+The first aggregate break-even rows were:
+
+```text
+OpenMP-1: no tested workload beat dedicated serial
+OpenMP-2: 18 documents / 5,591 shingles, 1.0631x, CV 0.3648
+OpenMP-4: 38 documents / 8,125 shingles, 2.4934x, CV 0.4119
+OpenMP-6: 18 documents / 5,591 shingles, 1.0538x, CV 0.8376
+```
+
+These are **raw median crossovers**, not safe production thresholds. At tiny runtimes, high CV and timer/runtime overhead dominate. Conservative packaged defaults should preserve dedicated serial for very small work and require a meaningful, stable OpenMP gain before switching.
+
+For large workloads, OpenMP-6 stabilized around approximately `3.85-4.10x` speedup over dedicated serial.
+
+#### 9.3 Stability-qualified single-candidate SMT winners
+
+Applying a provisional median-across-candidate `CV <= 10%` filter:
+
+```text
+3,720 documents / 645,770 shingles:
+  OpenMP-8
+  median 0.696230 ms
+  P95 0.739524 ms
+  CV 0.0660
+  1.3402x over OpenMP-6
+  5.3145x over serial
+
+37,200 documents / 6,457,700 shingles:
+  OpenMP-8
+  median 6.863662 ms
+  P95 7.079605 ms
+  CV 0.0608
+  1.3330x over OpenMP-6
+  5.2072x over serial
+
+372,000 documents / 64,577,000 shingles:
+  OpenMP-10
+  median 56.978298 ms
+  P95 64.105567 ms
+  CV 0.0803
+  1.5595x over OpenMP-6
+  6.4883x over serial
+```
+
+This refines the thread policy:
+
+```text
+OpenMP-6: safe physical-core baseline
+OpenMP-8: strongest conservative partial-SMT choice
+OpenMP-10: justified for sufficiently large work when calibration confirms stability
+OpenMP-12: never an uncalibrated default
+```
+
+#### 9.4 Exact physical batch winners
+
+The raw winner matrix is heterogeneous. The stability-qualified matrix is more useful for automatic selection.
+
+For `CV <= 10%` when at least one stable configuration existed:
+
+```text
+372 documents:
+  batch 1  -> repeated serial
+  batch 2  -> repeated OpenMP-2
+  batch 4  -> repeated serial
+  batch 8  -> repeated serial
+  batch 16 -> repeated OpenMP-6
+  batch 32 -> native batch OpenMP-6
+  batch 64 -> repeated OpenMP-6
+
+3,720 documents:
+  batch 1  -> native batch OpenMP-6
+  batch 2  -> repeated OpenMP-6
+  batch 4  -> repeated OpenMP-6
+  batch 8  -> repeated OpenMP-6
+  batch 16 -> repeated OpenMP-6
+  batch 32 -> native batch OpenMP-2
+  batch 64 -> native batch OpenMP-6
+
+37,200 documents:
+  batch 1  -> native batch OpenMP-6
+  batch 2  -> native batch OpenMP-6
+  batch 4  -> repeated OpenMP-6
+  batch 8  -> repeated OpenMP-6
+  batch 16 -> repeated OpenMP-6
+  batch 32 -> native batch OpenMP-6
+  batch 64 -> native batch OpenMP-6
+
+372,000 documents:
+  batch 1  -> native batch OpenMP-6
+  batch 2  -> repeated OpenMP-6
+  batch 4  -> repeated OpenMP-6
+  batch 8  -> repeated OpenMP-6
+  batch 16 -> repeated OpenMP-6
+  batch 32 -> native batch OpenMP-6
+  batch 64 -> native batch OpenMP-6
+```
+
+The robust large-workload pattern is:
+
+```text
+batch 1: native batch can win
+batch 2-16: repeated OpenMP generally wins
+batch 32-64: native batch generally wins
+```
+
+The natural 372-document corpus remains too small and variable for a single clean threshold. It should use conservative defaults or calibration.
+
+#### 9.5 Native batch gain versus repeated OpenMP
+
+Native batching was not monotonically better. At matching physical thread counts:
+
+- single-thread native batch often gained approximately `1.08-1.15x` over repeated OpenMP;
+- at batches 4-8 with 4-6 threads, native batch frequently lost badly, with gains as low as approximately `0.43-0.76x`;
+- at batch 32, native batch recovered, commonly reaching approximately `1.07-1.26x` at useful thread counts;
+- at batch 64, native batch commonly achieved approximately `1.08-1.30x` at six threads, depending on corpus size;
+- method ordering depended jointly on corpus size, batch size, thread count, candidate composition, and timing stability.
+
+Therefore, a universal rule such as `batch >= 2 -> native batch` would be incorrect.
+
+#### 9.6 Stability-qualified batch SMT winners
+
+```text
+3,720 documents:
+  batch 8  -> repeated OpenMP-8, 1.3264x over OpenMP-6
+  batch 32 -> repeated OpenMP-10, 1.5636x
+  batch 64 -> native batch OpenMP-8, 1.3388x
+
+37,200 documents:
+  batch 8  -> repeated OpenMP-10, 1.5320x
+  batch 32 -> repeated OpenMP-10, 1.4419x
+  batch 64 -> native batch OpenMP-10, 1.3832x
+
+372,000 documents:
+  batch 8  -> repeated OpenMP-10, 1.4102x
+  batch 32 -> repeated OpenMP-10, 1.4691x
+  batch 64 -> native batch OpenMP-10, 1.4248x
+```
+
+No stability-qualified winner used 12 threads. OpenMP-8 remains the conservative SMT choice, while OpenMP-10 is the maximum-performance candidate on this machine.
+
+#### 9.7 Exact memory limits
+
+Largest single-candidate working set:
+
+```text
+372,000 documents
+64,577,000 corpus shingles
+estimated input:  approximately 495.52 MiB
+three full outputs: 8.514 MiB
+estimated total: approximately 504.04 MiB
+```
+
+Native batch output scales as:
+
+\[
+24 \times document\_count \times candidate\_count
+\]
+
+At 372,000 documents:
+
+```text
+Batch 4:   output  34.058 MiB, total  529.612 MiB
+Batch 8:   output  68.115 MiB, total  563.677 MiB
+Batch 16:  output 136.230 MiB, total  631.833 MiB
+Batch 32:  output 272.461 MiB, total  768.145 MiB
+Batch 64:  output 544.922 MiB, total 1,040.769 MiB
+```
+
+This corrects the earlier approximate statement of 571 MiB output. The analytical output size for 372,000 documents and batch 64 is **544.922 MiB**, while the estimated total native working set is approximately **1.041 GiB**.
+
+#### 9.8 Plotting terminology for public documentation
+
+Public `0.1.0` plots should distinguish:
+
+```text
+Backend advantage versus dedicated serial
+Within-backend scaling versus backend-1
+True within-backend parallel efficiency
+```
+
+Formally:
+
+\[
+A_b(p)=\frac{T_{serial}}{T_{b,p}}
+\]
+
+\[
+S_b(p)=\frac{T_{b,1}}{T_{b,p}}
+\]
+
+\[
+E_b(p)=\frac{S_b(p)}{p}
+\]
+
+Only the final quantity should be labelled unqualified `parallel efficiency`.
+
+#### 9.9 Refined lexical automatic-selection shape
+
+```text
+Single candidate:
+  very small or unstable work -> dedicated serial
+  larger stable work -> OpenMP
+  uncalibrated thread baseline -> physical cores
+  calibrated thread candidates -> 8 and 10
+
+Candidate batch:
+  tiny corpus or unstable region -> conservative repeated path
+  large corpus, batch 2-16 -> repeated OpenMP generally preferred
+  large corpus, batch 32-64 -> native batch generally preferred
+  batch 1 -> native batch can win for scaled corpora
+
+Before native batch:
+  estimate full output allocation
+  reject native batch when output/total memory exceeds policy budget
+
+All calibrated choices:
+  require median gain
+  require acceptable P95 and CV
+  prefer fewer threads when performance is effectively tied
+```
+
+These are benchmark-informed regions, not portable hard-coded truths. A saved machine profile should own exact thresholds.
+
+
+## 16. Important methodological caveats
 
 1. **The corpus was production-derived but replicated for scaling.**
 

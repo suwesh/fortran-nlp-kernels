@@ -402,3 +402,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+run_real_single_matrix.py
