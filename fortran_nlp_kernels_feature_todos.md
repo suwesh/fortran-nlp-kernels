@@ -1,6 +1,6 @@
 # `fortran-nlp-kernels` Feature TODOs
 
-**Updated:** 22 October 2026  
+**Updated:** 24 October 2026  
 **Current focus:** Begin reproducible CPU performance evaluation using `fortran-nlp-kernels==0.1.0b2` before starting the NVIDIA GPU phase.
 
 ## Immediate Next: BLAS-Backed Vector Search

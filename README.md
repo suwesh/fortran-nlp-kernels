@@ -1,56 +1,70 @@
 # fortran-nlp-kernels
 
-[![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.10%E2%80%933.13-blue.svg)](https://www.python.org/)
 [![Fortran](https://img.shields.io/badge/Fortran-2018-purple.svg)](https://fortran-lang.org/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20x86--64-lightgrey.svg)](#platform-support)
 [![License](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0b1-orange.svg)](#beta-status)
+[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](#release-status)
 
-**Python-facing exact lexical and dense-vector similarity search backed by Fortran, OpenMP, and OpenBLAS.**
+**Exact lexical and dense-vector similarity search for Python with Fortran backends, CPU autotuning, and workload-aware runtime dispatch.**
 
-`fortran-nlp-kernels` provides a clean Python API while executing the computational kernels in compiled native code. The initial CPU beta includes exact word-shingle Jaccard search, exact inner-product search, exact squared-L2 search, cosine similarity, multicore OpenMP execution, and batched BLAS search.
+`fortran-nlp-kernels` provides a Python API for exact word-shingle Jaccard search and exact dense-vector search while executing the computational kernels in compiled Fortran, OpenMP, and OpenBLAS code. 
 
-### Beta status
+The stable `0.1.0` release introduces benchmark-informed CPU autotuning and workload-aware runtime dispatch, optional machine-specific thread calibration, versioned calibration profiles, runtime memory guardrails, and temporary OpenMP/OpenBLAS thread control. The shipped fallback policy is based on CPU performance experiments conducted on the `perf-eval` branch against the `0.1.0b2` implementation.
 
-`0.1.0b2` is the current Linux CPU beta.
+## Release status
 
-This release adds batched lexical Jaccard search, automatic backend selection, expanded input validation, package-version exposure, and tested manylinux wheels for CPython 3.10–3.13.
+`0.1.0` is the first stable Linux CPU release.
 
-The beta is intended for evaluation, reproducible systems work, and early integration. Public APIs may still evolve before the stable `0.1.0` release.
+The package is intended for exact similarity search, systems experimentation, reproducible CPU performance engineering, and integration into Python applications. Development continues beyond `0.1.0`; future releases may add improved top-k selection, machine-specific crossover calibration, additional platform support, and GPU backends.
 
-### Included
+## Included
 
 - Exact word-shingle Jaccard search
-- Serial Fortran lexical scoring
-- OpenMP Fortran lexical scoring
+- Batched lexical Jaccard search
 - Exact inner-product vector search
 - Exact squared-L2 vector search
 - Exact cosine-similarity search
-- Serial Fortran vector scoring
-- OpenMP Fortran vector scoring
-- OpenBLAS `SGEMV` single-query search
-- OpenBLAS `SGEMM` batched-query search
+- Serial Fortran lexical and vector scoring
+- OpenMP Fortran lexical and vector scoring
+- OpenBLAS `SGEMV` single-query vector search
+- OpenBLAS `SGEMM` batched vector search
+- Workload-aware `backend="auto"` runtime dispatch
+- Packaged benchmark-informed CPU fallback policy
+- Optional machine-specific OpenMP and OpenBLAS thread calibration
+- Versioned calibration profiles with compatibility checks
+- Runtime memory guardrails for native lexical batches and vector `SGEMM`
+- Temporary thread-runtime control with guaranteed restoration
 - Exact top-k selection
 - NumPy correctness references
-- Python, native Fortran, C ABI, and integration tests
-- Batched lexical Jaccard search
-- OpenMP parallelism across candidate-document pairs
-- Automatic backend selection
+- Python, native Fortran, C ABI, integration, policy, profile, calibration, and runtime tests
 - CPython 3.10–3.13 manylinux wheels
 
-### Current limitations
+## Current limitations
 
 - Linux x86-64 only
-- Result IDs are currently zero-based positional indexes
-- Batched lexical search requires `backend="fortran_openmp"` or `backend="auto"`
-- Batched vector search requires `backend="fortran_blas"` or `backend="auto"`
-- Handwritten top-k selection currently uses an `O(Nk)` reference implementation
-- CUDA Fortran and GPU backends are not included in this beta
+- Result IDs are zero-based positional indexes
+- Exact top-k selection currently uses an `O(Nk)` implementation
+- Machine calibration tunes representative OpenMP and OpenBLAS thread counts; workload crossover thresholds remain supplied by the packaged benchmark policy
+- Full-SMT counts are not selected automatically by the shipped fallback policy
+- Hybrid-core-aware placement, CPU affinity management, cache topology, and NUMA-aware dispatch are not included
+- CUDA Fortran and GPU backends are not included
 
 ## Architecture
 
 ```text
 Python public API
+        ↓
+Runtime workload descriptor
+        ↓
+Backend resolver:-
+        +-- Level 1: explicit backend override
+        +-- Level 2: compatible machine calibration profile
+        +-- Level 3: packaged fallback policy
+        ↓
+BackendDecision
+        ↓
+OpenMP / OpenBLAS runtime controller
         ↓
 Python validation, preprocessing, and orchestration
         ↓
@@ -80,25 +94,33 @@ vector_search_c_api.f90  → Fortran-to-C adapter
 cpu_bindings.cpp         → C-to-Python adapter
 ```
 
+The automatic-dispatch layer is implemented through:
+
+```text
+auto.py                   -> workload descriptors and backend resolution
+profile.py                -> machine fingerprinting and profile compatibility
+runtime.py                -> memory discovery and temporary thread control
+calibration.py            -> bounded optional CPU thread calibration
+policies/cpu_fallback_v1.json
+                           -> packaged benchmark-informed fallback policy
+```
+
 ## Platform support
 
-The initial `0.1.0b1` wheel targets CPython 3.12. The current development branch is continuously built and tested for: 
-```text 
-Operating system: Linux 
-Architecture: x86-64 
-Python: CPython 3.10, 3.11, 3.12, and 3.13 
+```text
+Operating system: Linux
+Architecture: x86-64
+Python: CPython 3.10, 3.11, 3.12, and 3.13
 Wheel policy: manylinux_2_28
 ```
 
-The source package declares Python 3.10 or newer, but this beta has currently been built and validated with CPython 3.12 on Ubuntu 24.04.
+The source package declares Python 3.10 or newer.
 
 ## System prerequisites
 
 ### Installing the prebuilt Linux wheel
 
-The published manylinux wheel bundles the required non-policy native
-libraries. No Fortran compiler or OpenBLAS development package is needed
-when installing a compatible prebuilt wheel.
+The published manylinux wheel bundles the required non-policy native libraries. A Fortran compiler and the OpenBLAS development package are not required when installing a compatible prebuilt wheel.
 
 ### Building from source
 
@@ -113,18 +135,18 @@ A source build also requires a supported Python environment and `pip`. Build-tim
 
 ## Installation
 
-### PyPI Beta
+### PyPI
 
-Install the latest available pre-release:
+Install the latest available stable release:
 
 ```bash
-python -m pip install --pre fortran-nlp-kernels
+python -m pip install fortran-nlp-kernels
 ```
 
-To request this exact beta:
+To install this exact release:
 
 ```bash
-python -m pip install fortran-nlp-kernels==0.1.0b2
+python -m pip install fortran-nlp-kernels==0.1.0
 ```
 
 ### Local wheel
@@ -132,7 +154,7 @@ python -m pip install fortran-nlp-kernels==0.1.0b2
 Download the wheel matching the installed CPython version from the GitHub release or CI artifacts, then install it by path: 
 ```bash 
 python -m pip install \ 
-    ./fortran_nlp_kernels-0.1.0b2-cp312-cp312-manylinux_2_28_x86_64.whl
+    ./fortran_nlp_kernels-0.1.0-cp312-cp312-manylinux_2_28_x86_64.whl
 ```
 
 ### Editable source installation
@@ -153,10 +175,10 @@ from fortran_nlp.lexical import JaccardIndex
 index = JaccardIndex(
     [
         "reset the account password",
-        "update seller information",
-        "create a new loan application",
+        "update contact information",
+        "create a new insurance application",
     ],
-    backend="fortran_openmp",
+    backend="auto",
 )
 
 results = index.search(
@@ -184,25 +206,15 @@ Text preprocessing performs Unicode normalization, case folding, fixed-size word
 
 ### Batched lexical Jaccard search
 
-`JaccardIndex.search_batch()` compares multiple candidate texts against
-the same indexed corpus.
+`JaccardIndex.search_batch()` compares multiple candidate texts against the same indexed corpus.
 
 ```python
 from fortran_nlp.lexical import JaccardIndex
 
-index = JaccardIndex(
-    [
-        "reset the account password",
-        "update seller information",
-        "create a new loan application",
-    ],
-    backend="auto",
-)
-
 batch_results = index.search_batch(
     [
         "how to reset the account password",
-        "seller information update",
+        "contact information update",
     ],
     k=2,
     minimum_score=0.01,
@@ -218,26 +230,16 @@ The return type is:
 list[list[JaccardResult]]
 ```
 
-The outer list contains one entry per candidate. Each inner list contains
-the ranked corpus matches for that candidate.
+The outer list contains one entry per candidate. Each inner list contains the ranked corpus matches for that candidate.
 
-Candidate shingles are stored in a packed variable-length representation
-with candidate offsets. The OpenMP backend distributes independent
-candidate-document comparisons across threads.
+With `backend="auto"`, batched lexical search chooses among repeated serial, repeated OpenMP, and native batched OpenMP execution according to the workload, active policy, and runtime memory budget.
 
-Batched lexical search requires:
+Explicit lexical batch execution is also supported:
 
-```python
-backend="fortran_openmp"
+```text
+backend="fortran"         -> repeated serial execution
+backend="fortran_openmp"  -> repeated OpenMP execution
 ```
-
-or:
-
-```python
-backend="auto"
-```
-
-Use `OMP_NUM_THREADS` to control parallel execution.
 
 ## Exact vector search
 
@@ -247,7 +249,7 @@ The Python-facing database layout is:
 (vector_count, dimension)
 ```
 
-All public vector-search inputs are converted to contiguous `float32` arrays. The package internally stores the database in a Fortran-compatible native layout.
+All public vector-search inputs are converted to contiguous `float32` arrays. The package internally stores the database in a Fortran-compatible `(dimension, vector_count)` layout.
 
 ### Inner product
 
@@ -274,7 +276,7 @@ query = np.array(
 
 index = FlatIndexIP(
     database,
-    backend="fortran_openmp",
+    backend="auto",
 )
 
 scores, ids = index.search(query, k=2)
@@ -292,7 +294,7 @@ from fortran_nlp.vector_search import FlatIndexL2
 
 index = FlatIndexL2(
     database,
-    backend="fortran",
+    backend="auto",
 )
 
 distances, ids = index.search(query, k=2)
@@ -307,7 +309,7 @@ from fortran_nlp.vector_search import FlatIndexCosine
 
 index = FlatIndexCosine(
     database,
-    backend="fortran_blas",
+    backend="auto",
 )
 
 scores, ids = index.search(query, k=2)
@@ -317,11 +319,7 @@ Zero vectors cannot be used with `FlatIndexCosine` because cosine normalization 
 
 ## Batched vector search
 
-Batched search uses OpenBLAS `SGEMM` and currently requires:
-
-```python
-backend="fortran_blas"
-```
+With `backend="auto"`, batched inner-product and cosine search selects between repeated OpenBLAS `SGEMV` and native OpenBLAS `SGEMM` according to query count, the active policy, and the runtime memory budget. Batched squared-L2 search uses the selected repeated serial, repeated OpenMP, or explicit BLAS execution path.
 
 The public query layout is:
 
@@ -342,7 +340,7 @@ queries = np.array(
 
 index = FlatIndexIP(
     database,
-    backend="fortran_blas",
+    backend="auto",
 )
 
 scores, ids = index.search_batch(
@@ -356,24 +354,34 @@ print(ids.shape)     # (query_count, k)
 
 `FlatIndexL2` and `FlatIndexCosine` expose the same `search_batch()` interface.
 
+Explicit batched vector execution is supported through all public backends:
+
+```text
+backend="fortran"         -> repeated serial execution
+backend="fortran_openmp"  -> repeated OpenMP execution
+backend="fortran_blas"    -> native BLAS batch execution
+```
+
 ## Backends
 
 ### Lexical search
 
 ```text
-fortran          → handwritten serial Fortran
-fortran_openmp   → handwritten OpenMP Fortran
+fortran          -> handwritten serial Fortran
+fortran_openmp   -> handwritten OpenMP Fortran
+auto             -> workload-aware runtime dispatch
 ```
 
 ### Vector search
 
 ```text
-fortran          → handwritten serial Fortran
-fortran_openmp   → handwritten OpenMP Fortran
-fortran_blas     → OpenBLAS SGEMV/SGEMM through Fortran
+fortran          -> handwritten serial Fortran
+fortran_openmp   -> handwritten OpenMP Fortran
+fortran_blas     -> OpenBLAS SGEMV/SGEMM through Fortran
+auto             -> workload-aware runtime dispatch
 ```
 
-### Automatic backend selection
+## Automatic backend selection
 
 Both public index families accept:
 
@@ -381,73 +389,134 @@ Both public index families accept:
 backend="auto"
 ```
 
-The current deterministic policy is:
+Automatic resolution happens at search time, when the complete workload is known. The original `"auto"` request remains visible through the index's `backend` property.
+
+Policy precedence is:
 
 ```text
-JaccardIndex
-auto → fortran_openmp
-
-FlatIndexIP
-FlatIndexL2
-FlatIndexCosine
-auto → fortran_blas
+1. Explicit backend request
+2. Compatible machine calibration profile
+3. Packaged benchmark-informed fallback policy
 ```
 
-Example:
+### Packaged fallback policy
+
+Without a compatible machine profile, `0.1.0` uses conservative workload rules derived from the packaged CPU performance findings.
+
+```text
+Lexical single query
+small workload             -> serial Fortran
+larger workload            -> OpenMP Fortran
+
+Lexical batch
+small corpus               -> repeated selected single-query path
+scaled batch size 1        -> native batched OpenMP
+scaled batch size 2-31     -> repeated OpenMP
+scaled batch size >= 32    -> native batched OpenMP
+
+IP and cosine single query -> OpenBLAS SGEMV
+IP and cosine batch 1-7    -> repeated SGEMV
+IP and cosine batch >= 8   -> OpenBLAS SGEMM
+
+Squared-L2 single query    -> OpenMP Fortran
+Squared-L2 batch           -> repeated OpenMP
+```
+
+Native batched lexical execution and vector `SGEMM` are selected only when their estimated allocations fit the runtime memory budget. Otherwise, automatic dispatch falls back to repeated execution.
+
+### Explicit backend override
+
+Explicit backends always bypass automatic policy selection:
 
 ```python
-from fortran_nlp.lexical import JaccardIndex
-from fortran_nlp.vector_search import FlatIndexCosine
-
-lexical_index = JaccardIndex(
-    corpus_texts,
-    backend="auto",
-)
-
-vector_index = FlatIndexCosine(
-    database_vectors,
-    backend="auto",
-)
+serial_index = FlatIndexIP(database, backend="fortran")
+openmp_index = FlatIndexIP(database, backend="fortran_openmp")
+blas_index = FlatIndexIP(database, backend="fortran_blas")
 ```
 
-The current policy selects stable production defaults. It does not
-benchmark the host machine dynamically. Future releases may use measured
-workload crossover points to refine automatic selection.
+Explicit requests also preserve the user's existing OpenMP or OpenBLAS runtime settings.
+
+## Optional CPU calibration
+
+The stable release includes explicit, bounded machine calibration for representative OpenMP and OpenBLAS thread counts.
+
+Calibration is never run during installation, import, index construction, or ordinary search. It does not modify the packaged fallback policy.
+
+Run calibration:
+
+```bash
+fortran-nlp-calibrate
+```
+
+Equivalent module invocation:
+
+```bash
+python -m fortran_nlp.calibration
+```
+
+Show the active compatible profile:
+
+```bash
+fortran-nlp-calibrate --show
+```
+
+Reset the selected user profile:
+
+```bash
+fortran-nlp-calibrate --reset
+```
+
+Use a custom profile path:
+
+```bash
+fortran-nlp-calibrate --output /path/to/cpu_profile.json
+```
+
+Or configure profile discovery:
+
+```bash
+export FORTRAN_NLP_PROFILE=/path/to/cpu_profile.json
+```
+
+The default profile location is:
+
+```text
+~/.config/fortran-nlp-kernels/cpu_profile.json
+```
+
+Profiles are versioned and checked against the installed package and machine fingerprint. Missing, malformed, stale, or incompatible profiles safely fall back to the packaged policy.
+
+The `0.1.0` calibration command tunes representative thread counts for:
+
+- lexical OpenMP execution;
+- squared-L2 OpenMP execution;
+- OpenBLAS `SGEMV`;
+- OpenBLAS `SGEMM`.
+
+The generated profile records candidate thread counts, selected counts, median timings, warm-ups, repeats, and the crossover-policy source. Machine-specific workload crossover calibration is deferred to a later release.
 
 ## Thread control
 
-The handwritten OpenMP and OpenBLAS backends use different thread controls.
+Automatic execution temporarily applies the selected OpenMP or OpenBLAS thread count around the native call and restores the previous runtime setting afterward, including when an exception occurs.
 
-### Handwritten OpenMP backend
-
-```bash
-OMP_NUM_THREADS=4 python your_script.py
-```
-
-### OpenBLAS backend
-
-```bash
-OPENBLAS_NUM_THREADS=4 python your_script.py
-```
-
-For controlled benchmarks, avoid enabling high thread counts in both runtimes simultaneously:
+Explicit backends preserve the user's runtime configuration. Environment variables remain useful for explicit execution and controlled benchmarks:
 
 ```bash
 # Handwritten serial
 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python benchmark.py
 
 # Handwritten OpenMP
-OMP_NUM_THREADS=12 OPENBLAS_NUM_THREADS=1 python benchmark.py
+OMP_NUM_THREADS=6 OPENBLAS_NUM_THREADS=1 python benchmark.py
 
-# BLAS
-OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=12 python benchmark.py
+# OpenBLAS
+OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=6 python benchmark.py
 ```
 
-The library does not globally overwrite these environment variables.
+The package does not globally overwrite `OMP_NUM_THREADS` or `OPENBLAS_NUM_THREADS`.
 
 ## Correctness and tests
 
-The implementation is validated across several boundaries:
+The implementation is validated across:
 
 ```text
 native Fortran core tests
@@ -460,20 +529,19 @@ single-query and batched-query tests
 public Python API tests
 input-validation and edge-case tests
 deterministic tie-handling tests
+fallback-policy and profile tests
+calibration-profile management tests
+memory-guardrail tests
+OpenMP and OpenBLAS restoration tests
 package-metadata tests
 wheel smoke tests
 ```
 
-The `0.1.0b2` release passes **98 Python tests** covering lexical search,
-batched lexical search, exact vector search, native bindings, automatic
-backend selection, memory layouts, input validation, deterministic tie
-handling, and package metadata.
+The stable `0.1.0` release passes **205 Python tests**.
 
 Run the Python test suite:
 
 ```bash
-OPENBLAS_NUM_THREADS=1 \
-OMP_NUM_THREADS=4 \
 python -m pytest tests/ -v
 ```
 
@@ -489,18 +557,15 @@ The repository includes two Linux CI workflows:
 
 ```text
 CPU Tests
-→ builds the package from source
-→ runs the complete test suite on CPython 3.10–3.13
+-> builds the package from source
+-> runs the complete test suite on CPython 3.10-3.13
 
 Build Linux Wheels
-→ builds and tests manylinux wheels with cibuildwheel
-→ targets CPython 3.10, 3.11, 3.12, and 3.13
+-> builds and tests manylinux wheels with cibuildwheel
+-> targets CPython 3.10, 3.11, 3.12, and 3.13
 ```
 
-The wheel workflow runs manually or when a version tag matching `v*`
-is pushed. Generated wheels are stored as temporary workflow artifacts.
-The workflow does not automatically attach wheels to GitHub Releases or
-upload them to PyPI.
+The wheel workflow runs manually or when a version tag matching `v*` is pushed. Generated wheels are stored as workflow artifacts. Release attachment and PyPI publication remain explicit release steps.
 
 ## Build system
 
@@ -526,11 +591,11 @@ python -m build
 Expected release artifacts:
 
 ```text
-fortran_nlp_kernels-0.1.0b2-cp310-cp310-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0b2-cp311-cp311-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0b2-cp312-cp312-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0b2-cp313-cp313-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0b2.tar.gz
+fortran_nlp_kernels-0.1.0-cp310-cp310-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0-cp311-cp311-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0-cp312-cp312-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0-cp313-cp313-manylinux_2_28_x86_64.whl
+fortran_nlp_kernels-0.1.0.tar.gz
 ```
 
 Validate distribution metadata and README rendering:
@@ -561,13 +626,13 @@ Working technical-report title:
 
 Planned follow-up work includes:
 
-- benchmark-informed automatic backend selection;
-- benchmark-informed OpenMP scheduling for batched lexical search;
+- machine-specific workload crossover calibration;
+- expanded calibration stability statistics;
 - optional document and vector IDs;
-- handwritten serial and OpenMP batched vector-search baselines;
 - optimized exact top-k selection;
 - CPU performance evaluation against NumPy, C++, and FAISS;
 - automated PyPI Trusted Publishing;
+- broader platform and architecture support;
 - CUDA Fortran lexical and vector-search kernels;
 - cuBLAS-backed vector search;
 - CUDA C++ research baselines;
