@@ -18,6 +18,9 @@ python.install_sources(
   [
     'src/fortran_nlp/__init__.py',
     'src/fortran_nlp/auto.py',
+    'src/fortran_nlp/profile.py',
+    'src/fortran_nlp/runtime.py',
+    'src/fortran_nlp/calibration.py',
   ],
   subdir: 'fortran_nlp',
 )

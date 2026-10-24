@@ -254,23 +254,31 @@ def test_search_batch_rejects_invalid_minimum_score(
         )
 
 
-def test_search_batch_rejects_serial_backend(
+def test_search_batch_supports_serial_backend(
     corpus_texts,
     candidate_texts,
 ):
-    index = JaccardIndex(
+    serial_index = JaccardIndex(
         corpus_texts,
         backend="fortran",
     )
 
-    with pytest.raises(
-        NotImplementedError,
-        match="fortran_openmp",
-    ):
-        index.search_batch(
-            candidate_texts,
-            k=2,
-        )
+    openmp_index = JaccardIndex(
+        corpus_texts,
+        backend="fortran_openmp",
+    )
+
+    serial_results = serial_index.search_batch(
+        candidate_texts,
+        k=3,
+    )
+
+    openmp_results = openmp_index.search_batch(
+        candidate_texts,
+        k=3,
+    )
+
+    assert serial_results == openmp_results
 
 
 def test_search_batch_returns_independent_result_lists(

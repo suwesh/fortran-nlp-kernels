@@ -278,4 +278,4 @@ def test_lexical_auto_selects_openmp():
         backend="auto",
     )
 
-    assert index.backend == "fortran_openmp"
+    assert index.backend == "auto"

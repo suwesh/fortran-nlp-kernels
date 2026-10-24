@@ -263,27 +263,35 @@ def test_query_batch_must_be_two_dimensional(database):
 
 
 @pytest.mark.parametrize(
+    "index_class",
+    [
+        FlatIndexIP,
+        FlatIndexL2,
+        FlatIndexCosine,
+    ],
+)
+@pytest.mark.parametrize(
     "backend",
     [
         "fortran",
         "fortran_openmp",
     ],
 )
-@pytest.mark.parametrize(
-    "index_class",
-    INDEX_CLASSES,
-)
-def test_batch_search_requires_blas_backend(
-    database,
+def test_batch_search_supports_repeated_backend(
     index_class,
     backend,
 ):
-    index = index_class(
-        database,
-        backend=backend,
+    database = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [0.0, 0.0, 1.0],
+            [-1.0, 2.0, 1.0],
+        ],
+        dtype=np.float32,
     )
 
-    query_batch = np.array(
+    queries = np.array(
         [
             [1.0, 2.0, 3.0],
             [0.0, 1.0, 0.0],
@@ -291,14 +299,42 @@ def test_batch_search_requires_blas_backend(
         dtype=np.float32,
     )
 
-    with pytest.raises(
-        NotImplementedError,
-        match="requires.*fortran_blas",
-    ):
-        index.search_batch(
-            query_batch,
-            k=1,
+    repeated_index = index_class(
+        database,
+        backend=backend,
+    )
+
+    blas_index = index_class(
+        database,
+        backend="fortran_blas",
+    )
+
+    repeated_values, repeated_indices = (
+        repeated_index.search_batch(
+            queries,
+            k=2,
         )
+    )
+
+    blas_values, blas_indices = blas_index.search_batch(
+        queries,
+        k=2,
+    )
+
+    assert repeated_values.shape == (2, 2)
+    assert repeated_indices.shape == (2, 2)
+
+    assert np.allclose(
+        repeated_values,
+        blas_values,
+        rtol=0.0,
+        atol=1e-5,
+    )
+
+    assert np.array_equal(
+        repeated_indices,
+        blas_indices,
+    )
 
 
 @pytest.mark.parametrize(
@@ -348,16 +384,23 @@ def test_ties_use_lower_positional_id(
         FlatIndexCosine,
     ],
 )
-def test_vector_auto_selects_blas(
-    database,
+def test_vector_auto_preserves_requested_backend(
     index_class,
 ):
+    database = np.array(
+        [
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+        ],
+        dtype=np.float32,
+    )
+
     index = index_class(
         database,
         backend="auto",
     )
 
-    assert index.backend == "fortran_blas"
+    assert index.backend == "auto"
 
 def test_auto_backend_supports_batch(database):
     index = FlatIndexIP(

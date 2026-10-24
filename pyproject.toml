@@ -34,3 +34,6 @@ test = [
 Homepage = "https://suwesh.github.io/"
 Repository = "https://github.com/suwesh/fortran-nlp-kernels"
 Issues = "https://github.com/suwesh/fortran-nlp-kernels/issues"
+
+[project.scripts]
+fortran-nlp-calibrate = "fortran_nlp.calibration:main"

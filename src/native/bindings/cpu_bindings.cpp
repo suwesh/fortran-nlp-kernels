@@ -2,11 +2,18 @@
 #include <limits>
 #include <stdexcept>
 
+#include <omp.h>
+
 #include <nanobind/nanobind.h>
 #include <nanobind/ndarray.h>
 
 #include "fortran_nlp_lexical.h"
 #include "fortran_nlp_vector_search.h"
+
+extern "C" {
+    int openblas_get_num_threads();
+    void openblas_set_num_threads(int thread_count);
+}
 
 namespace nb = nanobind;
 
@@ -741,6 +748,40 @@ NB_MODULE(_cpu, module)
 {
     module.doc() =
         "Native CPU kernels for fortran-nlp-kernels";
+    
+    module.def(
+        "get_openmp_max_threads",
+        []() {
+            return omp_get_max_threads();
+        }
+    );
+    module.def(
+        "set_openmp_num_threads",
+        [](int thread_count) {
+            if (thread_count < 1) {
+                throw std::invalid_argument("thread_count must be at least 1");
+            }
+            omp_set_num_threads(thread_count);
+        },
+        nb::arg("thread_count")
+    );
+
+    module.def(
+        "get_openblas_num_threads",
+        []() {
+            return openblas_get_num_threads();
+        }
+    );
+    module.def(
+        "set_openblas_num_threads",
+        [](int thread_count) {
+            if (thread_count < 1) {
+                throw std::invalid_argument("thread_count must be at least 1");
+            }
+            openblas_set_num_threads(thread_count);
+        },
+        nb::arg("thread_count")
+    );
 
     module.def(
         "jaccard_corpus_serial",

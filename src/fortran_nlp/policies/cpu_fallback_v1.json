@@ -75,6 +75,14 @@
         "strategy_basis": "repeated_openmp_won_all_tested_physical_batch_workloads"
       },
       "automatic_blas": false
+    },
+    "memory": {
+        "bytes_per_score": 4,
+        "bytes_per_result_value": 4,
+        "bytes_per_result_index": 8,
+        "maximum_available_memory_fraction": 0.25,
+        "safety_margin_fraction": 0.10,
+        "guardrail_basis": "conservative_release_policy"
     }
   }
 }

@@ -1,6 +1,15 @@
 import numpy as np
+
 from fortran_nlp import _cpu
+from fortran_nlp.auto import (
+    BackendDecision,
+    VectorWorkload,
+    resolve_vector_backend,
+)
+from fortran_nlp.runtime import apply_openmp_thread_policy, apply_openblas_thread_policy, get_available_memory_bytes
+
 from .normalization import normalize_database, normalize_vector
+
 
 SUPPORTED_BACKENDS = {
     "auto",
@@ -9,8 +18,11 @@ SUPPORTED_BACKENDS = {
     "fortran_blas",
 }
 
+
 class _FlatIndexBase:
-    """Shared validation and storage for exact flat indexes."""
+    """Shared validation, storage, and dispatch for exact flat indexes."""
+
+    _metric: str
 
     def __init__(
         self,
@@ -21,11 +33,9 @@ class _FlatIndexBase:
         if backend not in SUPPORTED_BACKENDS:
             raise ValueError(
                 f"Unsupported backend '{backend}'. "
-                f"Available backends: "
+                "Available backends: "
                 f"{', '.join(sorted(SUPPORTED_BACKENDS))}"
             )
-        if backend == "auto":
-            backend = "fortran_blas"
 
         database = np.asarray(
             database_vectors,
@@ -47,9 +57,10 @@ class _FlatIndexBase:
                 "vector dimension must be greater than zero"
             )
 
+        # Preserve the user's request, including "auto".
         self._backend = backend
-        self._vector_count = database.shape[0]
-        self._dimension = database.shape[1]
+        self._vector_count = int(database.shape[0])
+        self._dimension = int(database.shape[1])
 
         self._set_database(database)
 
@@ -57,15 +68,7 @@ class _FlatIndexBase:
         self,
         database: np.ndarray,
     ) -> None:
-        """
-        Store the database in native Fortran layout.
-
-        Python layout:
-            (vector_count, dimension)
-
-        Fortran layout:
-            (dimension, vector_count)
-        """
+        """Store the database as (dimension, vector_count)."""
 
         self._database = np.asfortranarray(
             database.T,
@@ -115,15 +118,16 @@ class _FlatIndexBase:
 
         if queries.shape[1] != self._dimension:
             raise ValueError(
-                "queries and database vectors must have equal dimensions"
+                "queries and database vectors must have "
+                "equal dimensions"
             )
 
-    # Python:  (query_count, dimension)
-    # Fortran: (dimension, query_count)
+        # Python:  (query_count, dimension)
+        # Fortran: (dimension, query_count)
         return np.asfortranarray(
             queries.T,
             dtype=np.float32,
-    )
+        )
 
     def _validate_k(self, k: int) -> None:
         if k < 1:
@@ -134,8 +138,31 @@ class _FlatIndexBase:
                 "k cannot exceed the database size"
             )
 
+    def _make_workload(
+        self,
+        *,
+        operation: str,
+        query_count: int,
+        k: int,
+    ) -> VectorWorkload:
+        return VectorWorkload(
+            metric=self._metric,
+            operation=operation,
+            dimension=self._dimension,
+            vector_count=self._vector_count,
+            query_count=query_count,
+            k=k,
+            available_memory_bytes=(
+                get_available_memory_bytes()
+                if operation == "batch"
+                else None
+            ),
+        )
+
     @property
     def backend(self) -> str:
+        """Return the backend requested during construction."""
+
         return self._backend
 
     @property
@@ -150,30 +177,29 @@ class _FlatIndexBase:
 class FlatIndexIP(_FlatIndexBase):
     """Exact inner-product vector-search index."""
 
-    def search(
-        self,
-        query_vector: np.ndarray,
-        *,
-        k: int = 1,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        self._validate_k(k)
-        query = self._prepare_query(query_vector)
+    _metric = "ip"
 
-        if self._backend == "fortran":
+    def _execute_single(
+        self,
+        query: np.ndarray,
+        k: int,
+        decision: BackendDecision,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if decision.strategy == "serial":
             return _cpu.ip_search_serial(
                 query,
                 self._database,
                 k,
             )
 
-        if self._backend == "fortran_openmp":
+        if decision.strategy == "openmp":
             return _cpu.ip_search_openmp(
                 query,
                 self._database,
                 k,
             )
 
-        if self._backend == "fortran_blas":
+        if decision.strategy == "blas_single":
             return _cpu.ip_search_blas(
                 query,
                 self._database,
@@ -181,38 +207,86 @@ class FlatIndexIP(_FlatIndexBase):
             )
 
         raise RuntimeError(
-            f"Unsupported backend state: {self._backend}"
+            "Unsupported IP single-query strategy: "
+            f"{decision.strategy}"
         )
-    def search_batch(
-        self,
-        query_vectors: np.ndarray,
-        *,
-        k: int = 1,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        self._validate_k(k)
 
-        if self._backend != "fortran_blas":
-            raise NotImplementedError(
-                "Batched search currently requires backend='fortran_blas'"
+    def _execute_repeated_batch(
+        self,
+        queries: np.ndarray,
+        k: int,
+        decision: BackendDecision,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        values_rows = []
+        indices_rows = []
+
+        for query_index in range(queries.shape[1]):
+            query = np.ascontiguousarray(
+                queries[:, query_index],
+                dtype=np.float32,
             )
 
-        queries = self._prepare_query_batch(
-            query_vectors
+            if decision.strategy == "repeated_serial":
+                values, indices = _cpu.ip_search_serial(
+                    query,
+                    self._database,
+                    k,
+                )
+            elif decision.strategy == "repeated_openmp":
+                values, indices = _cpu.ip_search_openmp(
+                    query,
+                    self._database,
+                    k,
+                )
+            elif decision.strategy == "repeated_blas_single":
+                values, indices = _cpu.ip_search_blas(
+                    query,
+                    self._database,
+                    k,
+                )
+            else:
+                raise RuntimeError(
+                    "Unsupported repeated IP strategy: "
+                    f"{decision.strategy}"
+                )
+
+            values_rows.append(values)
+            indices_rows.append(indices)
+
+        return (
+            np.stack(values_rows),
+            np.stack(indices_rows),
         )
 
-        values, indices = _cpu.ip_search_batch_blas(
-            queries,
-            self._database,
-            k,
+    def _execute_batch(
+        self,
+        queries: np.ndarray,
+        k: int,
+        decision: BackendDecision,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if decision.strategy in {
+            "repeated_serial",
+            "repeated_openmp",
+            "repeated_blas_single",
+        }:
+            return self._execute_repeated_batch(
+                queries,
+                k,
+                decision,
+            )
+
+        if decision.strategy == "blas_batch":
+            values, indices = _cpu.ip_search_batch_blas(
+                queries,
+                self._database,
+                k,
+            )
+            return values.T, indices.T
+
+        raise RuntimeError(
+            "Unsupported IP batch strategy: "
+            f"{decision.strategy}"
         )
-
-    # Native: (k, query_count)
-    # Public: (query_count, k)
-        return values.T, indices.T
-
-
-class FlatIndexL2(_FlatIndexBase):
-    """Exact squared-L2 vector-search index."""
 
     def search(
         self,
@@ -223,21 +297,112 @@ class FlatIndexL2(_FlatIndexBase):
         self._validate_k(k)
         query = self._prepare_query(query_vector)
 
-        if self._backend == "fortran":
+        decision = resolve_vector_backend(
+            self._backend,
+            self._make_workload(
+                operation="single",
+                query_count=1,
+                k=k,
+            ),
+        )
+
+        if decision.backend == "fortran_blas":
+            with apply_openblas_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_single(
+                    query,
+                    k,
+                    decision,
+                )
+
+        if decision.backend == "fortran_openmp":
+            with apply_openmp_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_single(
+                    query,
+                    k,
+                    decision,
+                )
+
+        return self._execute_single(
+            query,
+            k,
+            decision,
+        )
+
+    def search_batch(
+        self,
+        query_vectors: np.ndarray,
+        *,
+        k: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        self._validate_k(k)
+        queries = self._prepare_query_batch(query_vectors)
+
+        decision = resolve_vector_backend(
+            self._backend,
+            self._make_workload(
+                operation="batch",
+                query_count=int(queries.shape[1]),
+                k=k,
+            ),
+        )
+
+        if decision.backend == "fortran_blas":
+            with apply_openblas_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_batch(
+                    queries,
+                    k,
+                    decision,
+                )
+
+        if decision.backend == "fortran_openmp":
+            with apply_openmp_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_batch(
+                    queries,
+                    k,
+                    decision,
+                )
+
+        return self._execute_batch(
+            queries,
+            k,
+            decision,
+        )
+
+
+class FlatIndexL2(_FlatIndexBase):
+    """Exact squared-L2 vector-search index."""
+
+    _metric = "l2"
+
+    def _execute_single(
+        self,
+        query: np.ndarray,
+        k: int,
+        decision: BackendDecision,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if decision.strategy == "serial":
             return _cpu.l2_search_serial(
                 query,
                 self._database,
                 k,
             )
 
-        if self._backend == "fortran_openmp":
+        if decision.strategy == "openmp":
             return _cpu.l2_search_openmp(
                 query,
                 self._database,
                 k,
             )
 
-        if self._backend == "fortran_blas":
+        if decision.strategy == "blas_single":
             return _cpu.l2_search_blas(
                 query,
                 self._database,
@@ -245,43 +410,173 @@ class FlatIndexL2(_FlatIndexBase):
             )
 
         raise RuntimeError(
-            f"Unsupported backend state: {self._backend}"
+            "Unsupported L2 single-query strategy: "
+            f"{decision.strategy}"
         )
-    def search_batch(
-            self,
-            query_vectors: np.ndarray,
-            *,
-            k: int = 1,
-        ) -> tuple[np.ndarray, np.ndarray]:
-            self._validate_k(k)
-    
-            if self._backend != "fortran_blas":
-                raise NotImplementedError(
-                    "Batched search currently requires backend='fortran_blas'"
-                )
-    
-            queries = self._prepare_query_batch(
-                query_vectors
+
+    def _execute_repeated_batch(
+        self,
+        queries: np.ndarray,
+        k: int,
+        decision: BackendDecision,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        values_rows = []
+        indices_rows = []
+
+        for query_index in range(queries.shape[1]):
+            query = np.ascontiguousarray(
+                queries[:, query_index],
+                dtype=np.float32,
             )
-    
+
+            if decision.strategy == "repeated_serial":
+                values, indices = _cpu.l2_search_serial(
+                    query,
+                    self._database,
+                    k,
+                )
+            elif decision.strategy == "repeated_openmp":
+                values, indices = _cpu.l2_search_openmp(
+                    query,
+                    self._database,
+                    k,
+                )
+            else:
+                raise RuntimeError(
+                    "Unsupported repeated L2 strategy: "
+                    f"{decision.strategy}"
+                )
+
+            values_rows.append(values)
+            indices_rows.append(indices)
+
+        return (
+            np.stack(values_rows),
+            np.stack(indices_rows),
+        )
+
+    def _execute_batch(
+        self,
+        queries: np.ndarray,
+        k: int,
+        decision: BackendDecision,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        if decision.strategy in {
+            "repeated_serial",
+            "repeated_openmp",
+        }:
+            return self._execute_repeated_batch(
+                queries,
+                k,
+                decision,
+            )
+
+        if decision.strategy == "blas_batch":
             values, indices = _cpu.l2_search_batch_blas(
                 queries,
                 self._database,
                 k,
             )
-    
-        # Native: (k, query_count)
-        # Public: (query_count, k)
             return values.T, indices.T
+
+        raise RuntimeError(
+            "Unsupported L2 batch strategy: "
+            f"{decision.strategy}"
+        )
+
+    def search(
+        self,
+        query_vector: np.ndarray,
+        *,
+        k: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        self._validate_k(k)
+        query = self._prepare_query(query_vector)
+
+        decision = resolve_vector_backend(
+            self._backend,
+            self._make_workload(
+                operation="single",
+                query_count=1,
+                k=k,
+            ),
+        )
+
+        if decision.backend == "fortran_blas":
+            with apply_openblas_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_single(
+                    query,
+                    k,
+                    decision,
+                )
+
+        if decision.backend == "fortran_openmp":
+            with apply_openmp_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_single(
+                    query,
+                    k,
+                    decision,
+                )
+
+        return self._execute_single(
+            query,
+            k,
+            decision,
+        )
+
+    def search_batch(
+        self,
+        query_vectors: np.ndarray,
+        *,
+        k: int = 1,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        self._validate_k(k)
+        queries = self._prepare_query_batch(query_vectors)
+
+        decision = resolve_vector_backend(
+            self._backend,
+            self._make_workload(
+                operation="batch",
+                query_count=int(queries.shape[1]),
+                k=k,
+            ),
+        )
+
+        if decision.backend == "fortran_blas":
+            with apply_openblas_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_batch(
+                    queries,
+                    k,
+                    decision,
+                )
+
+        if decision.backend == "fortran_openmp":
+            with apply_openmp_thread_policy(
+                decision.thread_policy
+            ):
+                return self._execute_batch(
+                    queries,
+                    k,
+                    decision,
+                )
+
+        return self._execute_batch(
+            queries,
+            k,
+            decision,
+        )
 
 
 class FlatIndexCosine(FlatIndexIP):
-    """
-    Exact cosine-similarity vector-search index.
+    """Exact cosine similarity through normalized inner product."""
 
-    Database vectors and queries are L2-normalized before
-    inner-product search.
-    """
+    _metric = "cosine"
 
     def __init__(
         self,
@@ -312,6 +607,7 @@ class FlatIndexCosine(FlatIndexIP):
             normalized_query,
             k=k,
         )
+
     def search_batch(
         self,
         query_vectors: np.ndarray,
