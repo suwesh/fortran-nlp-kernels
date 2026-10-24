@@ -1,7 +1,7 @@
 project(
   'fortran-nlp-kernels',
   ['cpp', 'fortran'],
-  version: '0.1.0b2',
+  version: '0.1.0',
   meson_version: '>=1.3.0',
   default_options: [
     'cpp_std=c++17',
@@ -15,8 +15,27 @@ python = import('python').find_installation(
 )
 
 python.install_sources(
-  'src/fortran_nlp/__init__.py',
+  [
+    'src/fortran_nlp/__init__.py',
+    'src/fortran_nlp/auto.py',
+  ],
   subdir: 'fortran_nlp',
+)
+
+python.install_sources(
+  [
+    'src/fortran_nlp/policies/__init__.py',
+  ],
+  subdir: 'fortran_nlp/policies',
+)
+
+install_data(
+  'src/fortran_nlp/policies/cpu_fallback_v1.json',
+  install_dir: join_paths(
+    python.get_install_dir(),
+    'fortran_nlp',
+    'policies',
+  ),
 )
 
 python.install_sources(

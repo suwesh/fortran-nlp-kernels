@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "policy_version": "cpu-fallback-v1",
+  "package_compatibility": {
+    "minimum_version": "0.1.0",
+    "maximum_version_exclusive": "0.2.0"
+  },
+  "defaults": {
+    "openmp_thread_policy": "physical_cores",
+    "openblas_thread_policy": "single_thread",
+    "full_smt_automatic": false
+  },
+  "lexical": {
+    "single": {
+      "serial_max_document_count": 93,
+      "serial_max_corpus_shingles": 16359,
+      "small_work_strategy": "serial",
+      "large_work_strategy": "openmp",
+      "threshold_operator": "all",
+      "threshold_basis": "conservative_below_first_strong_openmp_region"
+    },
+    "batch": {
+      "tiny_corpus_max_document_count": 372,
+      "tiny_corpus_strategy": "repeated_selected_single",
+      "scaled_batch_one_strategy": "native_batch_openmp",
+      "repeated_openmp_min_candidates": 2,
+      "repeated_openmp_max_candidates": 31,
+      "native_batch_min_candidates": 32,
+      "native_batch_strategy": "native_batch_openmp",
+      "native_batch_memory_fallback": "repeated_openmp",
+      "threshold_basis": "stability_qualified_large_workload_pattern"
+    },
+    "memory": {
+      "bytes_per_document_offset": 8,
+      "bytes_per_candidate_offset": 8,
+      "bytes_per_shingle": 8,
+      "bytes_per_native_batch_result": 24,
+      "maximum_available_memory_fraction": 0.25,
+      "safety_margin_fraction": 0.10,
+      "guardrail_basis": "conservative_release_policy"
+    }
+  },
+  "vector": {
+    "ip": {
+      "single": {
+        "strategy": "blas_single",
+        "backend": "fortran_blas",
+        "thread_policy": "single_thread",
+        "strategy_basis": "sgemv_won_physical_single_query_matrix"
+      },
+      "batch": {
+        "repeated_single_max_queries": 4,
+        "repeated_single_strategy": "repeated_blas_single",
+        "native_batch_min_queries": 8,
+        "native_batch_strategy": "blas_batch",
+        "backend": "fortran_blas",
+        "thread_policy": "physical_cores",
+        "threshold_basis": "sgemm_consistently_won_from_batch_eight"
+      }
+    },
+    "cosine": {
+      "policy": "normalized_ip"
+    },
+    "l2": {
+      "single": {
+        "strategy": "openmp",
+        "backend": "fortran_openmp",
+        "thread_policy": "physical_cores",
+        "strategy_basis": "openmp_won_all_tested_physical_workloads"
+      },
+      "batch": {
+        "strategy": "repeated_openmp",
+        "backend": "fortran_openmp",
+        "thread_policy": "physical_cores",
+        "strategy_basis": "repeated_openmp_won_all_tested_physical_batch_workloads"
+      },
+      "automatic_blas": false
+    }
+  }
+}
