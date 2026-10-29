@@ -152,10 +152,10 @@ contains
 
         ! Declare thread-local variables
         ! The global one-dimensional CUDA thread index:
-        integer :: pair_index
+        integer(int64) :: pair_index
         ! The total number of candidate-document comparisons:
-        integer :: total_pairs
-        integer :: output_index
+        integer(int64) :: total_pairs
+        integer(int64) :: output_index
         integer :: candidate_index
         integer :: document_index
         integer(int64) :: candidate_start
@@ -164,17 +164,17 @@ contains
         integer(int64) :: document_end
 
         ! Calculate the global pair index
-        pair_index = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        pair_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
         ! Calculate the total number of pairs
-        total_pairs = candidate_count * document_count
+        total_pairs = int(candidate_count, kind=int64) * int(document_count, kind=int64)
         ! Guard excess threads
         if (pair_index > total_pairs) then
             return
         end if
 
         ! Convert the flat pair index into two coordinates
-        candidate_index = (pair_index - 1) / document_count + 1
-        document_index = modulo(pair_index - 1, document_count) + 1
+        candidate_index = int((pair_index - 1_int64) / int(document_count, kind=int64)) + 1
+        document_index = int(modulo(pair_index - 1_int64, int(document_count, kind=int64))) + 1
         ! Load candidate & document boundaries
         candidate_start = candidate_offsets(candidate_index)
         candidate_end = candidate_offsets(candidate_index + 1)
