@@ -1,0 +1,596 @@
+program test_lexical_cuda_core
+    use, intrinsic :: iso_fortran_env, only: int64, real64
+
+    use fnlp_lexical_core, only: &
+        jaccard_corpus_serial, &
+        jaccard_batch_corpus
+
+    use fnlp_lexical_cuda_core, only: &
+        jaccard_corpus_cuda, &
+        jaccard_batch_corpus_cuda
+
+    implicit none
+
+    call test_single_candidate()
+    call test_empty_candidate()
+    call test_batch()
+    call test_batch_size_one()
+
+    print *, "CUDA lexical core tests passed"
+
+contains
+
+    subroutine test_single_candidate()
+        integer, parameter :: document_count = 4
+
+        integer(int64) :: candidate(4)
+        integer(int64) :: corpus(9)
+        integer(int64) :: document_offsets(document_count + 1)
+
+        integer(int64) :: cpu_intersections(document_count)
+        integer(int64) :: cpu_unions(document_count)
+        real(real64) :: cpu_scores(document_count)
+
+        integer(int64) :: cuda_intersections(document_count)
+        integer(int64) :: cuda_unions(document_count)
+        real(real64) :: cuda_scores(document_count)
+
+        integer(int64) :: expected_intersections(document_count)
+        integer(int64) :: expected_unions(document_count)
+        real(real64) :: expected_scores(document_count)
+
+        candidate = [ &
+            10_int64, &
+            20_int64, &
+            40_int64, &
+            70_int64 &
+        ]
+
+        corpus = [ &
+            10_int64, 20_int64, 40_int64, &
+            15_int64, 20_int64, &
+            10_int64, 30_int64, 60_int64, 70_int64 &
+        ]
+
+        ! The fourth document is empty because its start and end
+        ! offsets are both 9.
+        document_offsets = [ &
+            0_int64, &
+            3_int64, &
+            5_int64, &
+            9_int64, &
+            9_int64 &
+        ]
+
+        expected_intersections = [ &
+            3_int64, &
+            1_int64, &
+            2_int64, &
+            0_int64 &
+        ]
+
+        expected_unions = [ &
+            4_int64, &
+            5_int64, &
+            6_int64, &
+            4_int64 &
+        ]
+
+        expected_scores = [ &
+            0.75_real64, &
+            0.20_real64, &
+            1.0_real64 / 3.0_real64, &
+            0.0_real64 &
+        ]
+
+        call jaccard_corpus_serial( &
+            candidate, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cpu_intersections, &
+            cpu_unions, &
+            cpu_scores &
+        )
+
+        call jaccard_corpus_cuda( &
+            candidate, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cuda_intersections, &
+            cuda_unions, &
+            cuda_scores &
+        )
+
+        call assert_int64_vector_equal( &
+            cpu_intersections, &
+            expected_intersections, &
+            "single CPU intersections" &
+        )
+
+        call assert_int64_vector_equal( &
+            cpu_unions, &
+            expected_unions, &
+            "single CPU unions" &
+        )
+
+        call assert_real64_vector_close( &
+            cpu_scores, &
+            expected_scores, &
+            "single CPU scores" &
+        )
+
+        call assert_int64_vector_equal( &
+            cuda_intersections, &
+            cpu_intersections, &
+            "single CUDA intersections" &
+        )
+
+        call assert_int64_vector_equal( &
+            cuda_unions, &
+            cpu_unions, &
+            "single CUDA unions" &
+        )
+
+        call assert_real64_vector_close( &
+            cuda_scores, &
+            cpu_scores, &
+            "single CUDA scores" &
+        )
+
+        print *, "Single-candidate CUDA equivalence: PASS"
+    end subroutine test_single_candidate
+
+
+    subroutine test_empty_candidate()
+        integer, parameter :: document_count = 4
+
+        integer(int64), allocatable :: candidate(:)
+        integer(int64) :: corpus(9)
+        integer(int64) :: document_offsets(document_count + 1)
+
+        integer(int64) :: cpu_intersections(document_count)
+        integer(int64) :: cpu_unions(document_count)
+        real(real64) :: cpu_scores(document_count)
+
+        integer(int64) :: cuda_intersections(document_count)
+        integer(int64) :: cuda_unions(document_count)
+        real(real64) :: cuda_scores(document_count)
+
+        integer(int64) :: expected_intersections(document_count)
+        integer(int64) :: expected_unions(document_count)
+        real(real64) :: expected_scores(document_count)
+
+        allocate(candidate(0))
+
+        corpus = [ &
+            10_int64, 20_int64, 40_int64, &
+            15_int64, 20_int64, &
+            10_int64, 30_int64, 60_int64, 70_int64 &
+        ]
+
+        document_offsets = [ &
+            0_int64, &
+            3_int64, &
+            5_int64, &
+            9_int64, &
+            9_int64 &
+        ]
+
+        expected_intersections = 0_int64
+
+        expected_unions = [ &
+            3_int64, &
+            2_int64, &
+            4_int64, &
+            0_int64 &
+        ]
+
+        expected_scores = 0.0_real64
+
+        call jaccard_corpus_serial( &
+            candidate, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cpu_intersections, &
+            cpu_unions, &
+            cpu_scores &
+        )
+
+        call jaccard_corpus_cuda( &
+            candidate, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cuda_intersections, &
+            cuda_unions, &
+            cuda_scores &
+        )
+
+        call assert_int64_vector_equal( &
+            cpu_intersections, &
+            expected_intersections, &
+            "empty-candidate CPU intersections" &
+        )
+
+        call assert_int64_vector_equal( &
+            cpu_unions, &
+            expected_unions, &
+            "empty-candidate CPU unions" &
+        )
+
+        call assert_real64_vector_close( &
+            cpu_scores, &
+            expected_scores, &
+            "empty-candidate CPU scores" &
+        )
+
+        call assert_int64_vector_equal( &
+            cuda_intersections, &
+            cpu_intersections, &
+            "empty-candidate CUDA intersections" &
+        )
+
+        call assert_int64_vector_equal( &
+            cuda_unions, &
+            cpu_unions, &
+            "empty-candidate CUDA unions" &
+        )
+
+        call assert_real64_vector_close( &
+            cuda_scores, &
+            cpu_scores, &
+            "empty-candidate CUDA scores" &
+        )
+
+        deallocate(candidate)
+
+        print *, "Empty-candidate CUDA equivalence: PASS"
+    end subroutine test_empty_candidate
+
+
+    subroutine test_batch()
+        integer, parameter :: candidate_count = 3
+        integer, parameter :: document_count = 4
+
+        integer(int64) :: candidate_shingles(6)
+        integer(int64) :: candidate_offsets(candidate_count + 1)
+
+        integer(int64) :: corpus(9)
+        integer(int64) :: document_offsets(document_count + 1)
+
+        integer(int64) :: cpu_intersections( &
+            document_count, &
+            candidate_count &
+        )
+
+        integer(int64) :: cpu_unions( &
+            document_count, &
+            candidate_count &
+        )
+
+        real(real64) :: cpu_scores( &
+            document_count, &
+            candidate_count &
+        )
+
+        integer(int64) :: cuda_intersections( &
+            document_count, &
+            candidate_count &
+        )
+
+        integer(int64) :: cuda_unions( &
+            document_count, &
+            candidate_count &
+        )
+
+        real(real64) :: cuda_scores( &
+            document_count, &
+            candidate_count &
+        )
+
+        candidate_shingles = [ &
+            10_int64, 20_int64, 40_int64, 70_int64, &
+            15_int64, 20_int64 &
+        ]
+
+        ! Candidate 1 contains four shingles.
+        ! Candidate 2 contains two shingles.
+        ! Candidate 3 is empty.
+        candidate_offsets = [ &
+            0_int64, &
+            4_int64, &
+            6_int64, &
+            6_int64 &
+        ]
+
+        corpus = [ &
+            10_int64, 20_int64, 40_int64, &
+            15_int64, 20_int64, &
+            10_int64, 30_int64, 60_int64, 70_int64 &
+        ]
+
+        ! Document 4 is empty.
+        document_offsets = [ &
+            0_int64, &
+            3_int64, &
+            5_int64, &
+            9_int64, &
+            9_int64 &
+        ]
+
+        call jaccard_batch_corpus( &
+            candidate_shingles, &
+            candidate_offsets, &
+            candidate_count, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cpu_intersections, &
+            cpu_unions, &
+            cpu_scores &
+        )
+
+        call jaccard_batch_corpus_cuda( &
+            candidate_shingles, &
+            candidate_offsets, &
+            candidate_count, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cuda_intersections, &
+            cuda_unions, &
+            cuda_scores &
+        )
+
+        call assert_int64_matrix_equal( &
+            cuda_intersections, &
+            cpu_intersections, &
+            "batch CUDA intersections" &
+        )
+
+        call assert_int64_matrix_equal( &
+            cuda_unions, &
+            cpu_unions, &
+            "batch CUDA unions" &
+        )
+
+        call assert_real64_matrix_close( &
+            cuda_scores, &
+            cpu_scores, &
+            "batch CUDA scores" &
+        )
+
+        print *, "Multi-candidate CUDA equivalence: PASS"
+    end subroutine test_batch
+
+
+    subroutine test_batch_size_one()
+        integer, parameter :: candidate_count = 1
+        integer, parameter :: document_count = 3
+
+        integer(int64) :: candidate_shingles(4)
+        integer(int64) :: candidate_offsets(candidate_count + 1)
+
+        integer(int64) :: corpus(9)
+        integer(int64) :: document_offsets(document_count + 1)
+
+        integer(int64) :: cpu_intersections( &
+            document_count, &
+            candidate_count &
+        )
+
+        integer(int64) :: cpu_unions( &
+            document_count, &
+            candidate_count &
+        )
+
+        real(real64) :: cpu_scores( &
+            document_count, &
+            candidate_count &
+        )
+
+        integer(int64) :: cuda_intersections( &
+            document_count, &
+            candidate_count &
+        )
+
+        integer(int64) :: cuda_unions( &
+            document_count, &
+            candidate_count &
+        )
+
+        real(real64) :: cuda_scores( &
+            document_count, &
+            candidate_count &
+        )
+
+        candidate_shingles = [ &
+            10_int64, &
+            20_int64, &
+            40_int64, &
+            70_int64 &
+        ]
+
+        candidate_offsets = [ &
+            0_int64, &
+            4_int64 &
+        ]
+
+        corpus = [ &
+            10_int64, 20_int64, 40_int64, &
+            15_int64, 20_int64, &
+            10_int64, 30_int64, 60_int64, 70_int64 &
+        ]
+
+        document_offsets = [ &
+            0_int64, &
+            3_int64, &
+            5_int64, &
+            9_int64 &
+        ]
+
+        call jaccard_batch_corpus( &
+            candidate_shingles, &
+            candidate_offsets, &
+            candidate_count, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cpu_intersections, &
+            cpu_unions, &
+            cpu_scores &
+        )
+
+        call jaccard_batch_corpus_cuda( &
+            candidate_shingles, &
+            candidate_offsets, &
+            candidate_count, &
+            corpus, &
+            document_offsets, &
+            document_count, &
+            cuda_intersections, &
+            cuda_unions, &
+            cuda_scores &
+        )
+
+        call assert_int64_matrix_equal( &
+            cuda_intersections, &
+            cpu_intersections, &
+            "batch-one CUDA intersections" &
+        )
+
+        call assert_int64_matrix_equal( &
+            cuda_unions, &
+            cpu_unions, &
+            "batch-one CUDA unions" &
+        )
+
+        call assert_real64_matrix_close( &
+            cuda_scores, &
+            cpu_scores, &
+            "batch-one CUDA scores" &
+        )
+
+        print *, "Batch-size-one CUDA equivalence: PASS"
+    end subroutine test_batch_size_one
+
+
+    subroutine assert_int64_vector_equal( &
+        actual, &
+        expected, &
+        label &
+    )
+        integer(int64), intent(in) :: actual(:)
+        integer(int64), intent(in) :: expected(:)
+        character(len=*), intent(in) :: label
+
+        if (size(actual) /= size(expected)) then
+            print *, trim(label), ": vector-size mismatch"
+            error stop "int64 vector assertion failed"
+        end if
+
+        if (any(actual /= expected)) then
+            print *, trim(label), ": value mismatch"
+            print *, "Actual:  ", actual
+            print *, "Expected:", expected
+            error stop "int64 vector assertion failed"
+        end if
+    end subroutine assert_int64_vector_equal
+
+
+    subroutine assert_real64_vector_close( &
+        actual, &
+        expected, &
+        label &
+    )
+        real(real64), intent(in) :: actual(:)
+        real(real64), intent(in) :: expected(:)
+        character(len=*), intent(in) :: label
+
+        real(real64), parameter :: tolerance = 1.0e-15_real64
+
+        if (size(actual) /= size(expected)) then
+            print *, trim(label), ": vector-size mismatch"
+            error stop "real64 vector assertion failed"
+        end if
+
+        if (any(abs(actual - expected) > tolerance)) then
+            print *, trim(label), ": value mismatch"
+            print *, "Actual:  ", actual
+            print *, "Expected:", expected
+            error stop "real64 vector assertion failed"
+        end if
+    end subroutine assert_real64_vector_close
+
+
+    subroutine assert_int64_matrix_equal( &
+        actual, &
+        expected, &
+        label &
+    )
+        integer(int64), intent(in) :: actual(:, :)
+        integer(int64), intent(in) :: expected(:, :)
+        character(len=*), intent(in) :: label
+        integer :: column_index
+
+        if (any(shape(actual) /= shape(expected))) then
+            print *, trim(label), ": matrix-shape mismatch"
+            error stop "int64 matrix assertion failed"
+        end if
+
+        if (any(actual /= expected)) then
+            print *, trim(label), ": value mismatch"
+
+            print *, "Actual columns:"
+            do column_index = 1, size(actual, dim=2)
+                print *, actual(:, column_index)
+            end do
+
+            print *, "Expected columns:"
+            do column_index = 1, size(expected, dim=2)
+                print *, expected(:, column_index)
+            end do
+
+            error stop "int64 matrix assertion failed"
+        end if
+    end subroutine assert_int64_matrix_equal
+
+
+    subroutine assert_real64_matrix_close( &
+        actual, &
+        expected, &
+        label &
+    )
+        real(real64), intent(in) :: actual(:, :)
+        real(real64), intent(in) :: expected(:, :)
+        character(len=*), intent(in) :: label
+        integer :: column_index
+
+        real(real64), parameter :: tolerance = 1.0e-15_real64
+
+        if (any(shape(actual) /= shape(expected))) then
+            print *, trim(label), ": matrix-shape mismatch"
+            error stop "real64 matrix assertion failed"
+        end if
+
+        if (any(abs(actual - expected) > tolerance)) then
+            print *, trim(label), ": value mismatch"
+        
+            print *, "Actual columns:"
+            do column_index = 1, size(actual, dim=2)
+                print *, actual(:, column_index)
+            end do
+        
+            print *, "Expected columns:"
+            do column_index = 1, size(expected, dim=2)
+                print *, expected(:, column_index)
+            end do
+        
+            error stop "real64 matrix assertion failed"
+        end if
+    end subroutine assert_real64_matrix_close
+
+end program test_lexical_cuda_core

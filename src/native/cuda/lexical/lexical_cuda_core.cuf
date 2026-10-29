@@ -1,0 +1,494 @@
+module fnlp_lexical_cuda_core
+    use, intrinsic :: iso_fortran_env, only: int64, real64, error_unit
+    use cudafor
+    implicit none
+    private
+    public :: jaccard_corpus_cuda
+    public :: jaccard_batch_corpus_cuda
+    integer, parameter :: cuda_block_size = 256
+
+contains
+    ! private pairwise device routine
+    ! Compare one sorted candidate with one sorted corpus document.
+    ! Offsets remain zero-based and end-exclusive, matching the existing Python and CPU representation.
+    attributes(device) subroutine jaccard_sorted_device( &
+        candidate_shingles, &
+        candidate_start, &
+        candidate_end, &
+        corpus_shingles, &
+        document_start, &
+        document_end, &
+        intersection_count, &
+        union_count, &
+        jaccard_score &
+    )
+        ! Declare the input arrays and offsets
+        integer(int64), device, intent(in) :: candidate_shingles(*)
+        integer(int64), value, intent(in) :: candidate_start
+        integer(int64), value, intent(in) :: candidate_end
+        integer(int64), device, intent(in) :: corpus_shingles(*)
+        integer(int64), value, intent(in) :: document_start
+        integer(int64), value, intent(in) :: document_end
+        ! Declare the outputs, One GPU thread will produce:
+        integer(int64), intent(out) :: intersection_count
+        integer(int64), intent(out) :: union_count
+        real(real64), intent(out) :: jaccard_score
+        ! for exactly one candidate-document pair.
+        ! Declare thread-local variables
+        integer(int64) :: candidate_index
+        integer(int64) :: document_index
+        integer(int64) :: candidate_count
+        integer(int64) :: document_count
+
+        ! Calculate the two set sizes
+        candidate_count = candidate_end - candidate_start
+        document_count = document_end - document_start
+        ! Convert offsets into Fortran indexes as Packed offsets are zero-based,
+        ! but Fortran array indexing begins at one.
+        candidate_index = candidate_start + 1_int64
+        document_index = document_start + 1_int64
+        ! Initialize the intersection:
+        intersection_count = 0_int64
+
+        ! Perform the sorted two-pointer merge, cpu eq is jaccard_sorted subroutine
+        do while (candidate_index <= candidate_end .and. document_index <= document_end)
+            ! candidate value smaller -> advance candidate pointer
+            if (candidate_shingles(candidate_index) < corpus_shingles(document_index)) then
+                candidate_index = candidate_index + 1_int64
+            ! document value smaller  -> advance document pointer
+            else if (candidate_shingles(candidate_index) > corpus_shingles(document_index)) then
+                document_index = document_index + 1_int64
+            ! values equal -> count match and advance both
+            else
+                intersection_count = intersection_count + 1_int64
+                candidate_index = candidate_index + 1_int64
+                document_index = document_index + 1_int64
+            end if
+        end do
+
+        ! Calculate the union and jaccard score
+        union_count = candidate_count + document_count - intersection_count
+        if (union_count == 0_int64) then
+            jaccard_score = 0.0_real64
+        else
+            jaccard_score = real(intersection_count, kind=real64) / real(union_count, kind=real64)
+        end if
+    end subroutine jaccard_sorted_device
+
+    ! Compare one candidate against every corpus document.
+    ! One CUDA thread processes one document.
+    attributes(global) subroutine jaccard_corpus_kernel( &
+        candidate_shingles, &
+        candidate_count, &
+        corpus_shingles, &
+        document_offsets, &
+        document_count, &
+        intersection_counts, &
+        union_counts, &
+        jaccard_scores &
+    )
+        ! declare Inputs, stored in device memory, here GPU HBM
+        integer(int64), device, intent(in) :: candidate_shingles(*)
+        integer(int64), value, intent(in) :: candidate_count
+        integer(int64), device, intent(in) :: corpus_shingles(*)
+        integer(int64), device, intent(in) :: document_offsets(*)
+        integer, value, intent(in) :: document_count
+        ! declare output arrays, stored in same device memory
+        integer(int64), device, intent(out) :: intersection_counts(*)
+        integer(int64), device, intent(out) :: union_counts(*)
+        real(real64), device, intent(out) :: jaccard_scores(*)
+        ! Each GPU thread writes to one position.
+        ! declare local variables. These variables belong privately to each GPU thread.
+        integer :: document_index
+        integer(int64) :: document_start
+        integer(int64) :: document_end
+        ! Calculate the global thread index
+        document_index = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        ! Guard excess threads
+        if (document_index > document_count) then
+            return
+        end if
+        ! Load the document boundaries
+        document_start = document_offsets(document_index)
+        document_end = document_offsets(document_index + 1)
+        ! Call the device helper
+        call jaccard_sorted_device( &
+            candidate_shingles, &
+            0_int64, &
+            candidate_count, &
+            corpus_shingles, &
+            document_start, &
+            document_end, &
+            intersection_counts(document_index), &
+            union_counts(document_index), &
+            jaccard_scores(document_index) &
+        )
+    end subroutine jaccard_corpus_kernel
+
+    ! Compare multiple candidates against every corpus document.
+    ! One CUDA thread processes one candidate-document pair.
+    attributes(global) subroutine jaccard_batch_corpus_kernel( &
+        candidate_shingles, &
+        candidate_offsets, &
+        candidate_count, &
+        corpus_shingles, &
+        document_offsets, &
+        document_count, &
+        intersection_counts, &
+        union_counts, &
+        jaccard_scores &
+    )
+        ! declare inputs, stored in cuda dev HBM
+        integer(int64), device, intent(in) :: candidate_shingles(*)
+        integer(int64), device, intent(in) :: candidate_offsets(*)
+        integer, value, intent(in) :: candidate_count
+        integer(int64), device, intent(in) :: corpus_shingles(*)
+        integer(int64), device, intent(in) :: document_offsets(*)
+        integer, value, intent(in) :: document_count
+        ! declare output arrays
+        integer(int64), device, intent(out) :: intersection_counts(*)
+        integer(int64), device, intent(out) :: union_counts(*)
+        real(real64), device, intent(out) :: jaccard_scores(*)
+
+        ! Declare thread-local variables
+        ! The global one-dimensional CUDA thread index:
+        integer :: pair_index
+        ! The total number of candidate-document comparisons:
+        integer :: total_pairs
+        integer :: output_index
+        integer :: candidate_index
+        integer :: document_index
+        integer(int64) :: candidate_start
+        integer(int64) :: candidate_end
+        integer(int64) :: document_start
+        integer(int64) :: document_end
+
+        ! Calculate the global pair index
+        pair_index = (blockIdx%x - 1) * blockDim%x + threadIdx%x
+        ! Calculate the total number of pairs
+        total_pairs = candidate_count * document_count
+        ! Guard excess threads
+        if (pair_index > total_pairs) then
+            return
+        end if
+
+        ! Convert the flat pair index into two coordinates
+        candidate_index = (pair_index - 1) / document_count + 1
+        document_index = modulo(pair_index - 1, document_count) + 1
+        ! Load candidate & document boundaries
+        candidate_start = candidate_offsets(candidate_index)
+        candidate_end = candidate_offsets(candidate_index + 1)
+        document_start = document_offsets(document_index)
+        document_end = document_offsets(document_index + 1)
+        ! calculate the output position
+        output_index = pair_index
+
+        ! Call pairwise helper
+        call jaccard_sorted_device( &
+            candidate_shingles, &
+            candidate_start, &
+            candidate_end, &
+            corpus_shingles, &
+            document_start, &
+            document_end, &
+            intersection_counts(output_index), &
+            union_counts(output_index), &
+            jaccard_scores(output_index) &
+        )
+    end subroutine jaccard_batch_corpus_kernel
+
+    ! Public host wrapper for one candidate against all corpus documents.
+    ! It has no attributes device/global, this is an ordinary host procedure executed by the CPU.
+    subroutine jaccard_corpus_cuda( &
+        candidate_shingles, &
+        corpus_shingles, &
+        document_offsets, &
+        document_count, &
+        intersection_counts, &
+        union_counts, &
+        jaccard_scores &
+    )
+        ! Host inputs stored in normal system memory(RAM).
+        integer(int64), intent(in) :: candidate_shingles(:)
+        integer(int64), intent(in) :: corpus_shingles(:)
+        integer(int64), intent(in) :: document_offsets(:)
+        integer, intent(in) :: document_count
+        ! Host outputs, one result for every corpus document.
+        integer(int64), intent(out) :: intersection_counts(document_count)
+        integer(int64), intent(out) :: union_counts(document_count)
+        real(real64), intent(out) :: jaccard_scores(document_count)
+
+        ! Declare the corresponding GPU arrays, Device arrays stored in GPU memory.
+        integer(int64), allocatable, device :: d_candidate_shingles(:)
+        integer(int64), allocatable, device :: d_corpus_shingles(:)
+        integer(int64), allocatable, device :: d_document_offsets(:)
+        integer(int64), allocatable, device :: d_intersection_counts(:)
+        integer(int64), allocatable, device :: d_union_counts(:)
+        real(real64), allocatable, device :: d_jaccard_scores(:)
+        ! Declare scalar metadata
+        integer(int64) :: candidate_count
+        integer(int64) :: corpus_shingle_count
+        ! The number of CUDA thread blocks to launch.
+        integer :: grid_size
+        integer :: status
+
+        ! Validate host input structure
+        if (document_count < 0) then
+            error stop "document_count must not be negative"
+        end if
+        if (size(document_offsets) /= document_count + 1) then
+            error stop "document_offsets length must be equal document_count + 1"
+        end if
+        if (document_offsets(1) /= 0_int64) then
+            error stop "document_offsets must begin with zero"
+        end if
+        corpus_shingle_count = size(corpus_shingles, kind=int64)
+        if (document_offsets(document_count + 1) /= corpus_shingle_count) then
+            error stop "final document offset must equal corpus length"
+        end if
+        ! handle empty corpus
+        if (document_count == 0) then
+            return
+        end if
+
+        ! calculate candidate size
+        candidate_count = size(candidate_shingles, kind=int64)
+        ! allocate GPU memory (VRAM)
+        allocate( &
+            d_candidate_shingles(max(1_int64, candidate_count)), &
+            d_corpus_shingles(max(1_int64, corpus_shingle_count)), &
+            d_document_offsets(document_count + 1), &
+            d_intersection_counts(document_count), &
+            d_union_counts(document_count), &
+            d_jaccard_scores(document_count) &
+        )
+        ! Copy inputs from CPU to GPU
+        if (candidate_count > 0_int64) then
+            d_candidate_shingles(1:candidate_count) = candidate_shingles
+        end if
+        if (corpus_shingle_count > 0_int64) then
+            d_corpus_shingles(1:corpus_shingle_count) = corpus_shingles
+        end if
+        d_document_offsets = document_offsets
+        ! At this point, all kernel inputs are located in GPU memory.
+        ! Calculate the CUDA grid size
+        grid_size = (document_count + cuda_block_size - 1) / cuda_block_size
+
+        ! Launch the private kernel
+        call jaccard_corpus_kernel<<<grid_size, cuda_block_size>>>( &
+            d_candidate_shingles, &
+            candidate_count, &
+            d_corpus_shingles, &
+            d_document_offsets, &
+            document_count, &
+            d_intersection_counts, &
+            d_union_counts, &
+            d_jaccard_scores &
+        )
+        ! Check whether kernel launch succeeded
+        status = cudaGetLastError()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA kernel launch failed with status ", status
+            error stop "jaccars_corpus_kernel launch failed"
+        end if
+
+        ! Wait for GPU completion
+        status = cudaDeviceSynchronize()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA kernel execution failed with sttaus ", status
+            error stop "jaccard_corpus_kernel execution failed"
+        end if
+
+        ! Copy outputs back to the CPU
+        intersection_counts = d_intersection_counts
+        union_counts = d_union_counts
+        jaccard_scores = d_jaccard_scores
+        ! Free GPU memory
+        deallocate( &
+            d_candidate_shingles, &
+            d_corpus_shingles, &
+            d_document_offsets, &
+            d_intersection_counts, &
+            d_union_counts, &
+            d_jaccard_scores &
+        )
+    end subroutine jaccard_corpus_cuda
+
+    ! Public host wrapper for multiple candidates against all corpus documents.
+    subroutine jaccard_batch_corpus_cuda( &
+        candidate_shingles, &
+        candidate_offsets, &
+        candidate_count, &
+        corpus_shingles, &
+        document_offsets, &
+        document_count, &
+        intersection_counts, &
+        union_counts, &
+        jaccard_scores &
+    )
+        ! Host candidate inputs and outputs stored in normal system memory.
+        integer(int64), intent(in) :: candidate_shingles(:)
+        integer(int64), intent(in) :: candidate_offsets(:)
+        integer, intent(in) :: candidate_count
+        integer(int64), intent(in) :: corpus_shingles(:)
+        integer(int64), intent(in) :: document_offsets(:)
+        integer, intent(in) :: document_count
+        ! Host outputs use the same public matrix layout as the existing CPU batch implementation.
+        integer(int64), intent(out) :: intersection_counts(document_count, candidate_count)
+        integer(int64), intent(out) :: union_counts(document_count, candidate_count)
+        real(real64), intent(out) :: jaccard_scores(document_count, candidate_count)
+
+        ! Device inputs stored in GPU memory.
+        integer(int64), allocatable, device :: d_candidate_shingles(:)
+        integer(int64), allocatable, device :: d_candidate_offsets(:)
+        integer(int64), allocatable, device :: d_corpus_shingles(:)
+        integer(int64), allocatable, device :: d_document_offsets(:)
+        ! Device outputs are flattened for direct indexing by the one-dimensional CUDA grid.
+        integer(int64), allocatable, device :: d_intersection_counts(:)
+        integer(int64), allocatable, device :: d_union_counts(:)
+        real(real64), allocatable, device :: d_jaccard_scores(:)
+        ! Flat host buffers receive device results before reshaping into the public two-dimensional output matrices.
+        integer(int64), allocatable :: h_intersection_counts(:)
+        integer(int64), allocatable :: h_union_counts(:)
+        real(real64), allocatable :: h_jaccard_scores(:)
+
+        ! declare scaler metadata
+        integer(int64) :: candidate_shingle_count
+        integer(int64) :: corpus_shingle_count
+        integer(int64) :: total_pairs
+        integer :: grid_size
+        integer :: status
+        integer :: index
+
+        ! validate logical counts, offset array lengths, and that both packed representations begin at zero
+        if (candidate_count < 1) then
+            error stop "candidate_count must be at least 1"
+        end if
+        if (document_count < 1) then
+            error stop "document_count must be at least 1"
+        end if
+        if (size(candidate_offsets) /= candidate_count + 1) then
+            error stop "candidate_offsets length must equal candidate_count + 1"
+        end if
+        if (size(document_offsets) /= document_count + 1) then
+            error stop "document_offsets length must equal document_count + 1"
+        end if
+        if (candidate_offsets(1) /= 0_int64) then
+            error stop "candidate_offsets must begin with zero"
+        end if
+        if (document_offsets(1) /= 0_int64) then
+            error stop "document_offsets must begin with zero"
+        end if
+
+        ! Calculate packed-array lengths
+        candidate_shingle_count = size(candidate_shingles, kind=int64)
+        corpus_shingle_count = size(corpus_shingles, kind=int64)
+
+        ! Validate the final offsets, non descreaasing candidate & document offsets
+        if (candidate_offsets(candidate_count + 1) /= candidate_shingle_count) then
+            error stop "final candidate offset must equal candidate length"
+        end if
+        if (document_offsets(document_count + 1) /= corpus_shingle_count) then
+            error stop "final document offset must equal corpus length"
+        end if
+        do index = 2, candidate_count + 1
+            if (candidate_offsets(index) < candidate_offsets(index - 1)) then
+                error stop "candidate_offsets must be nondecreasing"
+            end if
+        end do
+        do index = 2, document_count + 1
+            if (document_offsets(index) < document_offsets(index - 1)) then
+                error stop "document_offsets must be nondecreasing"
+            end if
+        end do
+
+        ! Calculate the total number of comparisons
+        total_pairs = int(candidate_count, kind=int64) * int(document_count, kind=int64)
+        ! Validate the launch-grid range
+        if (total_pairs > int(huge(grid_size), kind=int64) * int(cuda_block_size, kind=int64)) then
+            error stop "CUDA batch grid exceeds supported range"
+        end if
+
+        ! Allocate host temporary outputs
+        allocate( &
+            h_intersection_counts(total_pairs), &
+            h_union_counts(total_pairs), &
+            h_jaccard_scores(total_pairs) &
+        )
+        ! Allocate device arrays
+        allocate( &
+            d_candidate_shingles(max(1_int64, candidate_shingle_count)), &
+            d_candidate_offsets(candidate_count + 1), &
+            d_corpus_shingles(max(1_int64, corpus_shingle_count)), &
+            d_document_offsets(document_count + 1), &
+            d_intersection_counts(total_pairs), &
+            d_union_counts(total_pairs), &
+            d_jaccard_scores(total_pairs) &
+        )
+        ! Copy candidate inputs to the GPU
+        if (candidate_shingle_count > 0_int64) then
+            d_candidate_shingles(1:candidate_shingle_count) = candidate_shingles
+        end if
+        d_candidate_offsets = candidate_offsets
+        ! Copy corpus inputs to the GPU
+        if (corpus_shingle_count > 0_int64) then
+            d_corpus_shingles(1:corpus_shingle_count) = corpus_shingles
+        end if
+        d_document_offsets = document_offsets
+        ! At this point, the kernel has all required data on the GPU
+        ! Calculate the number of CUDA blocks
+        grid_size = int((total_pairs + int(cuda_block_size - 1, kind=int64)) / int(cuda_block_size, kind=int64))
+
+        ! Launch the private batch kernel
+        call jaccard_batch_corpus_kernel<<<grid_size, cuda_block_size>>>( &
+            d_candidate_shingles, &
+            d_candidate_offsets, &
+            candidate_count, &
+            d_corpus_shingles, &
+            d_document_offsets, &
+            document_count, &
+            d_intersection_counts, &
+            d_union_counts, &
+            d_jaccard_scores &
+        )
+
+        ! check the kernel launch
+        status = cudaGetLastError()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA batch launch failed with status ", status
+            error stop "jaccard_batch_corpus_kernel launch failed"
+        end if
+        ! Wait for execution and catch runtime errors
+        status = cudaDeviceSynchronize()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA batch execution failed with status ", status
+            error stop "jaccard_batch_corpus_kernel execution failed"
+        end if
+
+        ! Transfer flat outputs back to the host
+        h_intersection_counts = d_intersection_counts
+        h_union_counts = d_union_counts
+        h_jaccard_scores = d_jaccard_scores
+        ! Reshape the flat results into public output matrices
+        intersection_counts = reshape(h_intersection_counts, shape(intersection_counts))
+        union_counts = reshape(h_union_counts, shape(union_counts))
+        jaccard_scores = reshape(h_jaccard_scores, shape(jaccard_scores))
+
+        ! Free GPU and host temporary allocations
+        deallocate( &
+            d_candidate_shingles, &
+            d_candidate_offsets, &
+            d_corpus_shingles, &
+            d_document_offsets, &
+            d_intersection_counts, &
+            d_union_counts, &
+            d_jaccard_scores &
+        )
+        deallocate( &
+            h_intersection_counts, &
+            h_union_counts, &
+            h_jaccard_scores &
+        )
+    end subroutine jaccard_batch_corpus_cuda
+
+end module fnlp_lexical_cuda_core
