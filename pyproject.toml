@@ -9,7 +9,7 @@ requires = [
 
 [project]
 name = "fortran-nlp-kernels"
-version = "0.1.0"
+version = "0.1.1dev"
 description = "Fortran-backed exact lexical and dense-vector similarity kernels for Python with CPU autotuning and workload-aware runtime dispatch"
 readme = "README.md"
 requires-python = ">=3.10"

@@ -4,6 +4,12 @@ from dataclasses import dataclass
 import numpy as np
 
 from fortran_nlp import _cpu
+# optional _cuda import
+try:
+    from fortran_nlp import _cuda
+except ImportError:
+    _cuda = None
+
 from fortran_nlp.auto import (
     BackendDecision,
     LexicalWorkload,
@@ -25,7 +31,15 @@ SUPPORTED_BACKENDS = {
     "auto",
     "fortran",
     "fortran_openmp",
+    "cuda_fortran",
 }
+
+def _require_cuda_extension():
+    if _cuda is None:
+        raise RuntimeError(
+            "backend='cuda_fortran' requires the optional fortran_nlp._cuda extension, the NVIDIA CUDA runtime, and a compactible NVIDIA GPU"
+        )
+    return _cuda
 
 
 @dataclass(frozen=True)
@@ -129,6 +143,32 @@ class JaccardIndex:
                 break
 
         return results
+
+    def _execute_cuda_single(
+        self,
+        candidate_shingles: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Execute one candidate using the CUDA Fortran backend."""
+        cuda = _require_cuda_extension()
+        return _cuda.jaccard_corpus_cuda(
+            candidate_shingles,
+            self._corpus_shingles,
+            self._document_offsets,
+        )
+
+    def _execute_cuda_batch(
+        self,
+        candidate_shingles: np.ndarray,
+        candidate_offsets: np.ndarray,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Execute packed candidates using the CUDA Fortran backend."""
+        cuda = _require_cuda_extension()
+        return _cuda.jaccard_batch_corpus_cuda(
+            candidate_shingles,
+            candidate_offsets,
+            self._corpus_shingles,
+            self._document_offsets,
+        )
 
     def _execute_single(
         self,
@@ -258,6 +298,17 @@ class JaccardIndex:
             shingle_size=self._shingle_size,
         )
 
+        # explicit cuda branch
+        if self._backend == "cuda_fortran":
+            intersections, unions, scores = self._execute_cuda_single(candidate_shingles,)
+            return self._rank_results(
+                intersections,
+                unions,
+                scores,
+                k=k,
+                minimum_score=minimum_score,
+            )
+
         workload = LexicalWorkload(
             operation="single",
             document_count=self.document_count,
@@ -317,37 +368,41 @@ class JaccardIndex:
             shingle_size=self._shingle_size,
         )
 
-        candidate_shingle_counts = tuple(
-            int(length)
-            for length in np.diff(candidate_offsets)
-        )
-
-        workload = LexicalWorkload(
-            operation="batch",
-            document_count=self.document_count,
-            total_corpus_shingles=self.total_corpus_shingles,
-            candidate_count=len(candidates),
-            candidate_shingle_counts=(
-                candidate_shingle_counts
-            ),
-            available_memory_bytes=get_available_memory_bytes(),
-        )
-
-        decision = resolve_lexical_backend(
-            self._backend,
-            workload,
-        )
-
-        with apply_openmp_thread_policy(decision.thread_policy):
-            (
-                intersection_matrix,
-                union_matrix,
-                score_matrix,
-            ) = self._execute_batch(
-                candidate_shingles,
-                candidate_offsets,
-                decision,
+        # explicit batch cuda branch
+        if self._backend == "cuda_fortran":
+            intersection_matrix, union_matrix, score_matrix = self._execute_cuda_batch(candidate_shingles, candidate_offsets,)
+        else:
+            candidate_shingle_counts = tuple(
+                int(length)
+                for length in np.diff(candidate_offsets)
             )
+
+            workload = LexicalWorkload(
+                operation="batch",
+                document_count=self.document_count,
+                total_corpus_shingles=self.total_corpus_shingles,
+                candidate_count=len(candidates),
+                candidate_shingle_counts=(
+                    candidate_shingle_counts
+                ),
+                available_memory_bytes=get_available_memory_bytes(),
+            )
+
+            decision = resolve_lexical_backend(
+                self._backend,
+                workload,
+            )
+
+            with apply_openmp_thread_policy(decision.thread_policy):
+                (
+                    intersection_matrix,
+                    union_matrix,
+                    score_matrix,
+                ) = self._execute_batch(
+                    candidate_shingles,
+                    candidate_offsets,
+                    decision,
+                )
 
         batch_results = []
 
