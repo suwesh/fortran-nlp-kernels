@@ -514,6 +514,53 @@ OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=6 python benchmark.py
 
 The package does not globally overwrite `OMP_NUM_THREADS` or `OPENBLAS_NUM_THREADS`.
 
+## Optional CUDA Fortran backend
+
+The development version (0.1.1.dev0) includes an explicit CUDA Fortran backend for lexical Jaccard search.
+
+Requirements:
+
+- NVIDIA GPU with a compatible driver
+- NVIDIA HPC SDK with `nvfortran`
+- CUDA toolkit supported by the selected HPC SDK installation
+
+Install the editable development build with CUDA enabled:
+
+```bash
+python -m pip install -e . \
+  --no-build-isolation \
+  -Csetup-args=-Dfnlp_cuda=true \
+  -Csetup-args=-Dfnlp_cuda_arch=cc86 \
+  -Csetup-args=-Dfnlp_cuda_toolkit=cuda13.3
+```
+Use the explicit backend:
+```python
+from fortran_nlp.lexical import JaccardIndex
+
+index = JaccardIndex(
+    documents,
+    backend="cuda_fortran",
+)
+
+results = index.search(
+    "reset the account password",
+    k=10,
+)
+```
+Batched search uses the same backend:
+```python
+batch_results = index.search_batch(
+    candidates,
+    k=10,
+)
+```
+The CUDA backend is currently explicit. backend="auto" continues to use the existing CPU workload-aware policy. CPU/GPU automatic dispatch is deferred until benchmark-derived crossover points are available.
+Run the complete CUDA-enabled test suite:
+```bash 
+pytest -q tests
+```
+228 passed
+
 ## Correctness and tests
 
 The implementation is validated across:
