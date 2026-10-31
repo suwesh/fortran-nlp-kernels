@@ -1,0 +1,455 @@
+program test_vector_search_cuda_core
+    use, intrinsic :: iso_fortran_env, only: real32, int64
+
+    use fnlp_vector_search_core, only: &
+        l2_database_serial, &
+        ip_database_serial
+
+    use fnlp_vector_search_cuda_core, only: &
+        l2_database_cuda, &
+        ip_database_cuda
+
+    implicit none
+
+    call test_known_scores()
+    call test_multiple_cuda_blocks()
+    call test_single_dimension()
+    call test_zero_and_negative_values()
+    call test_empty_database()
+
+    print *, "CUDA vector-search core tests passed"
+
+contains
+
+    subroutine test_known_scores()
+        integer, parameter :: dimension = 3
+        integer, parameter :: database_vector_count = 4
+
+        real(real32) :: query_vector(dimension)
+        real(real32) :: database_vectors( &
+            dimension, &
+            database_vector_count &
+        )
+
+        real(real32) :: cpu_l2(database_vector_count)
+        real(real32) :: cuda_l2(database_vector_count)
+        real(real32) :: cpu_ip(database_vector_count)
+        real(real32) :: cuda_ip(database_vector_count)
+
+        real(real32) :: expected_l2(database_vector_count)
+        real(real32) :: expected_ip(database_vector_count)
+
+        query_vector = [ &
+            1.0_real32, &
+            2.0_real32, &
+            3.0_real32 &
+        ]
+
+        database_vectors(:, 1) = [ &
+            1.0_real32, &
+            2.0_real32, &
+            3.0_real32 &
+        ]
+
+        database_vectors(:, 2) = [ &
+            2.0_real32, &
+            0.0_real32, &
+            4.0_real32 &
+        ]
+
+        database_vectors(:, 3) = [ &
+            -1.0_real32, &
+            -2.0_real32, &
+            -3.0_real32 &
+        ]
+
+        database_vectors(:, 4) = [ &
+            0.0_real32, &
+            0.0_real32, &
+            0.0_real32 &
+        ]
+
+        expected_l2 = [ &
+            0.0_real32, &
+            6.0_real32, &
+            56.0_real32, &
+            14.0_real32 &
+        ]
+
+        expected_ip = [ &
+            14.0_real32, &
+            14.0_real32, &
+            -14.0_real32, &
+            0.0_real32 &
+        ]
+
+        call l2_database_serial( &
+            query_vector, &
+            database_vectors, &
+            cpu_l2 &
+        )
+
+        call l2_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_l2 &
+        )
+
+        call ip_database_serial( &
+            query_vector, &
+            database_vectors, &
+            cpu_ip &
+        )
+
+        call ip_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_ip &
+        )
+
+        call assert_real32_vector_close( &
+            cpu_l2, &
+            expected_l2, &
+            "known CPU L2 scores" &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_l2, &
+            expected_l2, &
+            "known CUDA L2 scores" &
+        )
+
+        call assert_real32_vector_close( &
+            cpu_ip, &
+            expected_ip, &
+            "known CPU IP scores" &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_ip, &
+            expected_ip, &
+            "known CUDA IP scores" &
+        )
+
+        print *, "Known vector scores: PASS"
+    end subroutine test_known_scores
+
+
+    subroutine test_multiple_cuda_blocks()
+        integer, parameter :: dimension = 17
+        integer, parameter :: database_vector_count = 600
+
+        real(real32) :: query_vector(dimension)
+        real(real32) :: database_vectors( &
+            dimension, &
+            database_vector_count &
+        )
+
+        real(real32) :: cpu_l2(database_vector_count)
+        real(real32) :: cuda_l2(database_vector_count)
+        real(real32) :: cpu_ip(database_vector_count)
+        real(real32) :: cuda_ip(database_vector_count)
+
+        integer :: dimension_index
+        integer :: database_vector_index
+
+        do dimension_index = 1, dimension
+            query_vector(dimension_index) = &
+                real(dimension_index - 9, kind=real32) / &
+                7.0_real32
+        end do
+
+        do database_vector_index = 1, database_vector_count
+            do dimension_index = 1, dimension
+                database_vectors( &
+                    dimension_index, &
+                    database_vector_index &
+                ) = real( &
+                    modulo( &
+                        dimension_index * 13 &
+                        + database_vector_index * 7, &
+                        41 &
+                    ) - 20, &
+                    kind=real32 &
+                ) / 9.0_real32
+            end do
+        end do
+
+        call l2_database_serial( &
+            query_vector, &
+            database_vectors, &
+            cpu_l2 &
+        )
+
+        call l2_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_l2 &
+        )
+
+        call ip_database_serial( &
+            query_vector, &
+            database_vectors, &
+            cpu_ip &
+        )
+
+        call ip_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_ip &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_l2, &
+            cpu_l2, &
+            "multi-block CUDA L2 scores" &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_ip, &
+            cpu_ip, &
+            "multi-block CUDA IP scores" &
+        )
+
+        print *, "Multiple CUDA blocks: PASS"
+    end subroutine test_multiple_cuda_blocks
+
+
+    subroutine test_single_dimension()
+        integer, parameter :: dimension = 1
+        integer, parameter :: database_vector_count = 5
+
+        real(real32) :: query_vector(dimension)
+        real(real32) :: database_vectors( &
+            dimension, &
+            database_vector_count &
+        )
+
+        real(real32) :: cuda_l2(database_vector_count)
+        real(real32) :: cuda_ip(database_vector_count)
+
+        real(real32) :: expected_l2(database_vector_count)
+        real(real32) :: expected_ip(database_vector_count)
+
+        query_vector = [2.0_real32]
+
+        database_vectors(1, :) = [ &
+            -2.0_real32, &
+            0.0_real32, &
+            2.0_real32, &
+            3.0_real32, &
+            5.0_real32 &
+        ]
+
+        expected_l2 = [ &
+            16.0_real32, &
+            4.0_real32, &
+            0.0_real32, &
+            1.0_real32, &
+            9.0_real32 &
+        ]
+
+        expected_ip = [ &
+            -4.0_real32, &
+            0.0_real32, &
+            4.0_real32, &
+            6.0_real32, &
+            10.0_real32 &
+        ]
+
+        call l2_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_l2 &
+        )
+
+        call ip_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_ip &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_l2, &
+            expected_l2, &
+            "single-dimension CUDA L2 scores" &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_ip, &
+            expected_ip, &
+            "single-dimension CUDA IP scores" &
+        )
+
+        print *, "Single-dimension vectors: PASS"
+    end subroutine test_single_dimension
+
+
+    subroutine test_zero_and_negative_values()
+        integer, parameter :: dimension = 4
+        integer, parameter :: database_vector_count = 3
+
+        real(real32) :: query_vector(dimension)
+        real(real32) :: database_vectors( &
+            dimension, &
+            database_vector_count &
+        )
+
+        real(real32) :: cpu_l2(database_vector_count)
+        real(real32) :: cuda_l2(database_vector_count)
+        real(real32) :: cpu_ip(database_vector_count)
+        real(real32) :: cuda_ip(database_vector_count)
+
+        query_vector = [ &
+            0.0_real32, &
+            -2.5_real32, &
+            4.0_real32, &
+            -1.0_real32 &
+        ]
+
+        database_vectors(:, 1) = 0.0_real32
+
+        database_vectors(:, 2) = [ &
+            -3.0_real32, &
+            2.0_real32, &
+            -4.0_real32, &
+            1.0_real32 &
+        ]
+
+        database_vectors(:, 3) = query_vector
+
+        call l2_database_serial( &
+            query_vector, &
+            database_vectors, &
+            cpu_l2 &
+        )
+
+        call l2_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_l2 &
+        )
+
+        call ip_database_serial( &
+            query_vector, &
+            database_vectors, &
+            cpu_ip &
+        )
+
+        call ip_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_ip &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_l2, &
+            cpu_l2, &
+            "zero-negative CUDA L2 scores" &
+        )
+
+        call assert_real32_vector_close( &
+            cuda_ip, &
+            cpu_ip, &
+            "zero-negative CUDA IP scores" &
+        )
+
+        print *, "Zero and negative values: PASS"
+    end subroutine test_zero_and_negative_values
+
+
+    subroutine test_empty_database()
+        integer, parameter :: dimension = 3
+
+        real(real32) :: query_vector(dimension)
+        real(real32), allocatable :: database_vectors(:, :)
+        real(real32), allocatable :: cuda_l2(:)
+        real(real32), allocatable :: cuda_ip(:)
+
+        query_vector = [ &
+            1.0_real32, &
+            2.0_real32, &
+            3.0_real32 &
+        ]
+
+        allocate(database_vectors(dimension, 0))
+        allocate(cuda_l2(0))
+        allocate(cuda_ip(0))
+
+        call l2_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_l2 &
+        )
+
+        call ip_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            cuda_ip &
+        )
+
+        if (size(cuda_l2) /= 0) then
+            error stop "Empty CUDA L2 output must have size zero"
+        end if
+
+        if (size(cuda_ip) /= 0) then
+            error stop "Empty CUDA IP output must have size zero"
+        end if
+
+        deallocate(database_vectors)
+        deallocate(cuda_l2)
+        deallocate(cuda_ip)
+
+        print *, "Empty database: PASS"
+    end subroutine test_empty_database
+
+
+    subroutine assert_real32_vector_close( &
+        actual, &
+        expected, &
+        label &
+    )
+        real(real32), intent(in) :: actual(:)
+        real(real32), intent(in) :: expected(:)
+        character(len=*), intent(in) :: label
+
+        real(real32), parameter :: absolute_tolerance = &
+            1.0e-5_real32
+
+        real(real32), parameter :: relative_tolerance = &
+            1.0e-5_real32
+
+        real(real32) :: allowed_error
+        real(real32) :: difference
+
+        integer :: value_index
+
+        if (size(actual) /= size(expected)) then
+            print *, trim(label), ": vector-size mismatch"
+            print *, "Actual size:  ", size(actual)
+            print *, "Expected size:", size(expected)
+            error stop "real32 vector assertion failed"
+        end if
+
+        do value_index = 1, size(actual)
+            difference = abs( &
+                actual(value_index) - expected(value_index) &
+            )
+
+            allowed_error = absolute_tolerance &
+                + relative_tolerance &
+                * abs(expected(value_index))
+
+            if (difference > allowed_error) then
+                print *, trim(label), ": value mismatch"
+                print *, "Index:   ", value_index
+                print *, "Actual:  ", actual(value_index)
+                print *, "Expected:", expected(value_index)
+                print *, "Error:   ", difference
+                print *, "Allowed: ", allowed_error
+                error stop "real32 vector assertion failed"
+            end if
+        end do
+    end subroutine assert_real32_vector_close
+
+end program test_vector_search_cuda_core

@@ -1,0 +1,282 @@
+module fnlp_vector_search_cuda_core
+    use, intrinsic :: iso_fortran_env, only: real32, int64, error_unit
+    use cudafor
+    implicit none
+    private
+    public :: l2_database_cuda
+    public :: ip_database_cuda
+    integer, parameter :: cuda_block_size = 256
+
+contains
+    ! Compare one query vector with one database vector using squared L2 distance.
+    ! The database is logically shaped as: (dimension, vector_count)
+    ! Each database vector occupies one contiguous Fortran column.
+    attributes(device) subroutine squared_l2_distance_device( &
+        query_vector, &
+        database_vectors, &
+        dimension, &
+        database_vector_index, &
+        distance &
+    )
+        real(real32), device, intent(in) :: query_vector(*)
+        real(real32), device, intent(in) :: database_vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: database_vector_index
+        real(real32), intent(out) :: distance
+
+        integer(int64) :: dimension_index
+        integer(int64) :: database_start
+        integer(int64) :: database_element
+        real(real32) :: difference
+
+        database_start = (database_vector_index - 1_int64) * dimension
+        distance = 0.0_real32
+
+        do dimension_index = 1_int64, dimension
+            database_element = database_start + dimension_index
+            difference = query_vector(dimension_index) - database_vectors(database_element)
+            distance = distance + difference * difference
+        end do
+    end subroutine squared_l2_distance_device
+
+    ! Compare one query vector with one database vector using inner product.
+    ! The database is logically shaped as: (dimension, vector_count)
+    ! Each database vector occupies one contiguous Fortran column.
+    attributes(device) subroutine inner_product_device( &
+        query_vector, &
+        database_vectors, &
+        dimension, &
+        database_vector_index, &
+        similarity &
+    )
+        real(real32), device, intent(in) :: query_vector(*)
+        real(real32), device, intent(in) :: database_vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: database_vector_index
+        real(real32), intent(out) :: similarity
+
+        integer(int64) :: dimension_index
+        integer(int64) :: database_start
+        integer(int64) :: database_element
+
+        database_start = (database_vector_index - 1_int64) * dimension
+        similarity = 0.0_real32
+
+        do dimension_index = 1_int64, dimension
+            database_element = database_start + dimension_index
+            similarity = similarity + query_vector(dimension_index) * database_vectors(database_element)
+        end do
+    end subroutine inner_product_device
+
+    ! Score one query vector against the complete database using squared L2 distance.
+    ! One CUDA thread processes one database vector.
+    attributes(global) subroutine l2_database_kernel( &
+        query_vector, &
+        database_vectors, &
+        dimension, &
+        database_vector_count, &
+        distances &
+    )
+        real(real32), device, intent(in) :: query_vector(*)
+        real(real32), device, intent(in) :: database_vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: database_vector_count
+        real(real32), device, intent(out) :: distances(*)
+
+        integer(int64) :: database_vector_index
+        
+        database_vector_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
+        if (database_vector_index > database_vector_count) then
+            return
+        end if
+
+        call squared_l2_distance_device( &
+            query_vector, &
+            database_vectors, &
+            dimension, &
+            database_vector_index, &
+            distances(database_vector_index) &
+        )
+    end subroutine l2_database_kernel
+
+    attributes(global) subroutine ip_database_kernel( &
+        query_vector, &
+        database_vectors, &
+        dimension, &
+        database_vector_count, &
+        similarities &
+    )
+        real(real32), device, intent(in) :: query_vector(*)
+        real(real32), device, intent(in) :: database_vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: database_vector_count
+        real(real32), device, intent(out) :: similarities(*)
+
+        integer(int64) :: database_vector_index
+
+        database_vector_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
+        if (database_vector_index > database_vector_count) then
+            return
+        end if
+
+        call inner_product_device( &
+            query_vector, &
+            database_vectors, &
+            dimension, &
+            database_vector_index, &
+            similarities(database_vector_index) &
+        )
+    end subroutine ip_database_kernel
+
+    ! Score one query vector against the complete database using squared L2 distance on the GPU.
+    ! This is an ordinary CPU-host procedure that launches l2_database_kernel() on the GPU
+    subroutine l2_database_cuda( &
+        query_vector, &
+        database_vectors, &
+        distances &
+    )
+        ! Host arrays stored in CPU memory
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: distances(size(database_vectors, dim=2))
+
+        ! Device arrays stored in GPU memory
+        real(real32), allocatable, device :: d_query_vector(:)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        real(real32), allocatable, device :: d_distances(:)
+
+        ! declare the scalar metadata
+        integer(int64) :: dimension
+        integer(int64) :: database_vector_count
+        integer :: grid_size
+        integer :: status
+
+        ! Calculate and validate dimensions
+        dimension = size(query_vector, kind=int64)
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop "Query and database vectors must have equal dimensions."
+        end if
+        ! handle an empty database
+        if (database_vector_count == 0_int64) then
+            return
+        end if
+
+        ! Allocate GPU memory
+        allocate( &
+            d_query_vector(dimension), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_distances(database_vector_count) &
+        )
+        ! Copy inputs from CPU to GPU
+        d_query_vector = query_vector
+        d_database_vectors = database_vectors
+
+        ! Calculate number of CUDA blocks
+        grid_size = int((database_vector_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        
+        ! Launch the L2 Kernel
+        call l2_database_kernel<<<grid_size, cuda_block_size>>>( &
+            d_query_vector, &
+            d_database_vectors, &
+            dimension, &
+            database_vector_count, &
+            d_distances &
+        )
+
+        ! check the kernel launch status
+        status = cudaGetLastError()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA L2 kernel launch failed with status ", status
+            error stop "l2_database_kernel launch failed"
+        end if
+        ! wait for GPU execution
+        status = cudaDeviceSynchronize()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA L2 kernel execution failed with status ", status
+            error stop "l2_database_kernel execution failed"
+        end if
+
+        ! copy distances back to CPU
+        distances = d_distances
+        ! free GPU memory
+        deallocate( &
+            d_query_vector, &
+            d_database_vectors, &
+            d_distances &
+        )
+    end subroutine l2_database_cuda
+
+    subroutine ip_database_cuda( &
+        query_vector, &
+        database_vectors, &
+        similarities &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: similarities(size(database_vectors, dim=2))
+
+        real(real32), allocatable, device :: d_query_vector(:)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        real(real32), allocatable, device :: d_similarities(:)
+
+        integer(int64) :: dimension
+        integer(int64) :: database_vector_count
+        integer :: grid_size
+        integer :: status
+
+        dimension = size(query_vector, kind=int64)
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop "Query and database vectors must have equal dimensions."
+        end if
+        if (database_vector_count == 0_int64) then
+            return
+        end if
+
+        allocate( &
+            d_query_vector(dimension), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_similarities(database_vector_count) &
+        )
+        d_query_vector = query_vector
+        d_database_vectors = database_vectors
+
+        grid_size = int((database_vector_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        
+        call ip_database_kernel<<<grid_size, cuda_block_size>>>( &
+            d_query_vector, &
+            d_database_vectors, &
+            dimension, &
+            database_vector_count, &
+            d_similarities &
+        )
+
+        status = cudaGetLastError()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA IP kernel launch failed with status ", status
+            error stop "ip_database_kernel launch failed"
+        end if
+        status = cudaDeviceSynchronize()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA IP kernel execution failed with status ", status
+            error stop "ip_database_kernel execution failed"
+        end if
+
+        similarities = d_similarities
+        deallocate( &
+            d_query_vector, &
+            d_database_vectors, &
+            d_similarities &
+        )
+    end subroutine ip_database_cuda
+
+end module fnlp_vector_search_cuda_core
