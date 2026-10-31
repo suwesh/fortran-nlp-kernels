@@ -1,10 +1,14 @@
 module fnlp_vector_search_cuda_core
     use, intrinsic :: iso_fortran_env, only: real32, int64, error_unit
+    ! Reuse deterministic host-side top-k selection.
+    use fnlp_topk_core, only: topk_smallest, topk_largest
     use cudafor
     implicit none
     private
     public :: l2_database_cuda
     public :: ip_database_cuda
+    public :: l2_search_cuda
+    public :: ip_search_cuda
     integer, parameter :: cuda_block_size = 256
 
 contains
@@ -278,5 +282,99 @@ contains
             d_similarities &
         )
     end subroutine ip_database_cuda
+
+    ! Exact squared L2 search using CUDA database scoring
+    ! followed by deterministic CPU top-k selection.
+    subroutine l2_search_cuda( &
+        query_vector, &
+        database_vectors, &
+        k, &
+        topk_distances, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_distances(k)
+        integer(int64), intent(out) :: topk_indices(k)
+
+        real(real32), allocatable :: distances(:)
+        integer(int64) :: database_vector_count
+
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate k
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(distances(database_vector_count))
+
+        ! run gpu scoring
+        call l2_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            distances &
+        )
+        ! Run deterministic CPU top-k
+        call topk_smallest( &
+            distances, &
+            k, &
+            topk_distances, &
+            topk_indices &
+        )
+
+        deallocate(distances)
+    end subroutine l2_search_cuda
+
+    ! Exact Inner Product search using CUDA database scoring
+    ! followed by deterministic CPU top-k selection.
+    subroutine ip_search_cuda( &
+        query_vector, &
+        database_vectors, &
+        k, &
+        topk_similarities, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_similarities(k)
+        integer(int64), intent(out) :: topk_indices(k)
+
+        real(real32), allocatable :: similarities(:)
+        integer(int64) :: database_vector_count
+
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate k
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(similarities(database_vector_count))
+
+        ! run gpu scoring
+        call ip_database_cuda( &
+            query_vector, &
+            database_vectors, &
+            similarities &
+        )
+        ! Run deterministic CPU top-k
+        call topk_largest( &
+            similarities, &
+            k, &
+            topk_similarities, &
+            topk_indices &
+        )
+
+        deallocate(similarities)
+    end subroutine ip_search_cuda
 
 end module fnlp_vector_search_cuda_core

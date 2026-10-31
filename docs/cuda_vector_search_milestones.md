@@ -2,7 +2,7 @@
 
 ## Status
 
-**20% complete**
+**30% complete**
 
 Target release: `0.1.1`
 
@@ -28,6 +28,10 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - one-dimensional vectors
   - zero and negative values
   - empty database
+- [x] Integrated existing CPU top-k
+  - `topk_largest` for inner product and cosine
+  - `topk_smallest` for squared L2
+  - deterministic ties and zero-based indices
 
 ## Remaining
 
@@ -40,18 +44,14 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - batched inner product
   - batched squared L2
   - cosine through normalized inner product
-- [ ] Integrate existing CPU top-k
-  - `topk_largest` for inner product and cosine
-  - `topk_smallest` for squared L2
-  - deterministic ties and zero-based indices
 - [ ] Extend native CUDA Fortran correctness tests
   - batched scoring
-  - CPU top-k integration
   - cosine-compatible normalized scoring
 - [ ] Implement cuBLAS scoring
   - SGEMV single-query path
   - SGEMM batched-query path
   - squared L2 and cosine support
+  - existing deterministic CPU top-k integration
 - [ ] Add CUDA vector-search C ABI
 - [ ] Add CUDA vector-search C header
 - [ ] Add native C ABI tests

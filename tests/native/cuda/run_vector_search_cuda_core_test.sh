@@ -62,7 +62,7 @@ rm -f \
     -module "$build_directory" \
     -o "$build_directory/vector_search_cuda_core.o"
 
-# Compile the native CUDA vector-search test program.
+# Compile the native CUDA scoring and CPU top-k integration test program.
 "$NVFORTRAN" \
     -c \
     -cuda \
