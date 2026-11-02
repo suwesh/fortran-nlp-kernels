@@ -73,13 +73,32 @@ mkdir -p "$(dirname "$extension_path")"
 cd "$project_root"
 
 rm -f \
+    "$build_directory/fnlp_topk_core.mod" \
     "$build_directory/fnlp_lexical_cuda_core.mod" \
     "$build_directory/fnlp_lexical_cuda_c_api.mod" \
+    "$build_directory/fnlp_vector_search_cuda_core.mod" \
+    "$build_directory/fnlp_vector_search_cublas.mod" \
+    "$build_directory/fnlp_vector_search_cuda_c_api.mod" \
+    "$build_directory/topk_core.o" \
     "$build_directory/lexical_cuda_core.o" \
     "$build_directory/lexical_cuda_c_api.o" \
+    "$build_directory/vector_search_cuda_core.o" \
+    "$build_directory/vector_search_cublas.o" \
+    "$build_directory/vector_search_cuda_c_api.o" \
     "$build_directory/cuda_bindings.o" \
     "$build_directory/nb_combined.o" \
     "$extension_path"
+
+
+echo "Building deterministic CPU top-k core..."
+
+"$NVFORTRAN" \
+    -c \
+    -O3 \
+    -fPIC \
+    src/native/cpu/vector_search/topk_core.f90 \
+    -module "$build_directory" \
+    -o "$build_directory/topk_core.o"
 
 echo "Building CUDA Fortran lexical core..."
 
@@ -93,7 +112,7 @@ echo "Building CUDA Fortran lexical core..."
     -module "$build_directory" \
     -o "$build_directory/lexical_cuda_core.o"
 
-echo "Building CUDA FOrtran C ABI..."
+echo "Building CUDA Fortran C ABI..."
 
 "$NVFORTRAN" \
     -c \
@@ -105,6 +124,47 @@ echo "Building CUDA FOrtran C ABI..."
     -I "$build_directory" \
     -module "$build_directory" \
     -o "$build_directory/lexical_cuda_c_api.o"
+
+echo "Building handwritten CUDA Fortran vector-search core..."
+
+"$NVFORTRAN" \
+    -c \
+    -cuda \
+    -gpu="${CUDA_ARCH},${CUDA_TOOLKIT}" \
+    -O3 \
+    -fPIC \
+    src/native/cuda/vector_search/vector_search_cuda_core.cuf \
+    -I "$build_directory" \
+    -module "$build_directory" \
+    -o "$build_directory/vector_search_cuda_core.o"
+
+echo "Building cuBLAS vector-search backend..."
+
+"$NVFORTRAN" \
+    -c \
+    -cuda \
+    -gpu="${CUDA_ARCH},${CUDA_TOOLKIT}" \
+    -cudalib=cublas \
+    -O3 \
+    -fPIC \
+    src/native/cuda/vector_search/vector_search_cublas.cuf \
+    -I "$build_directory" \
+    -module "$build_directory" \
+    -o "$build_directory/vector_search_cublas.o"
+
+echo "Building CUDA vector-search C ABI..."
+
+"$NVFORTRAN" \
+    -c \
+    -cuda \
+    -gpu="${CUDA_ARCH},${CUDA_TOOLKIT}" \
+    -cudalib=cublas \
+    -O3 \
+    -fPIC \
+    src/native/cuda/vector_search/vector_search_cuda_c_api.cuf \
+    -I "$build_directory" \
+    -module "$build_directory" \
+    -o "$build_directory/vector_search_cuda_c_api.o"
 
 echo "Building nanobind CUDA adapter with g++..."
 
@@ -142,9 +202,14 @@ echo "Linking Python CUDA extension..."
     -shared \
     -cuda \
     -gpu="${CUDA_ARCH},${CUDA_TOOLKIT}" \
+    -cudalib=cublas \
     -Mnomain \
+    "$build_directory/topk_core.o" \
     "$build_directory/lexical_cuda_core.o" \
     "$build_directory/lexical_cuda_c_api.o" \
+    "$build_directory/vector_search_cuda_core.o" \
+    "$build_directory/vector_search_cublas.o" \
+    "$build_directory/vector_search_cuda_c_api.o" \
     "$build_directory/cuda_bindings.o" \
     "$build_directory/nb_combined.o" \
     -lstdc++ \

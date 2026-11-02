@@ -2,7 +2,7 @@
 
 ## Status
 
-**70% complete**
+**80% complete**
 
 Target release: `0.1.1`
 
@@ -64,18 +64,20 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - `vector_search_cuda_core.cuf`
   - `vector_search_cublas.cuf`
   - `vector_search_cuda_c_api.cuf`
-  - `fortran_nlp_cuda_vector_search.h`\
+  - `fortran_nlp_cuda_vector_search.h`
 - [x] Add CUDA vector-search C ABI
 - [x] Add CUDA vector-search C header
 - [x] Add native C ABI tests
 - [x] Extend the nanobind `_cuda` extension
+- [x] Route normalized cosine inputs through handwritten CUDA and cuBLAS inner product
+- [x] Add cosine-compatible normalized scoring tests
+- [x] Add low-level Python `_cuda` vector tests
+  - 84 tests passed
+- [x] Add vector CUDA sources and cuBLAS to the optional Meson build
+- [x] Verify CUDA-enabled editable build
 
 ## Remaining
 
-- [ ] Route normalized cosine inputs through handwritten CUDA inner product
-- [ ] Add cosine-compatible normalized scoring tests
-- [ ] Add low-level Python `_cuda` vector tests
-- [ ] Add vector CUDA sources and cuBLAS to the optional Meson build
 - [ ] Add explicit public vector backends
   - `cuda_fortran`
   - `cuda_cublas`

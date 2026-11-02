@@ -712,6 +712,23 @@ NB_MODULE(_cuda, module)
     );
 
     module.def(
+        "ip_search_cuda",
+        [](const Float32Vector &query_vector,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_single(
+                query_vector,
+                database_vectors,
+                k,
+                fnlp_ip_search_cuda
+            );
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
         "l2_search_batch_cuda",
         [](const Float32MatrixF &query_vectors,
            const Float32MatrixF &database_vectors,
