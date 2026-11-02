@@ -7,68 +7,84 @@ module fnlp_vector_search_cuda_core
     private
     public :: l2_database_cuda
     public :: ip_database_cuda
+    public :: l2_database_batch_cuda
+    public :: ip_database_batch_cuda
     public :: l2_search_cuda
     public :: ip_search_cuda
+    public :: l2_search_batch_cuda
+    public :: ip_search_batch_cuda
     integer, parameter :: cuda_block_size = 256
 
 contains
     ! Compare one query vector with one database vector using squared L2 distance.
     ! The database is logically shaped as: (dimension, vector_count)
-    ! Each database vector occupies one contiguous Fortran column.
+    ! Query and database vectors occupies contiguous Fortran column.
     attributes(device) subroutine squared_l2_distance_device( &
-        query_vector, &
+        query_vectors, &
         database_vectors, &
         dimension, &
+        query_vector_index, &
         database_vector_index, &
         distance &
     )
-        real(real32), device, intent(in) :: query_vector(*)
+        real(real32), device, intent(in) :: query_vectors(*)
         real(real32), device, intent(in) :: database_vectors(*)
         integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: query_vector_index
         integer(int64), value, intent(in) :: database_vector_index
         real(real32), intent(out) :: distance
 
         integer(int64) :: dimension_index
+        integer(int64) :: query_start
+        integer(int64) :: query_element
         integer(int64) :: database_start
         integer(int64) :: database_element
         real(real32) :: difference
 
+        query_start = (query_vector_index - 1_int64) * dimension
         database_start = (database_vector_index - 1_int64) * dimension
         distance = 0.0_real32
 
         do dimension_index = 1_int64, dimension
+            query_element = query_start + dimension_index
             database_element = database_start + dimension_index
-            difference = query_vector(dimension_index) - database_vectors(database_element)
+            difference = query_vectors(query_element) - database_vectors(database_element)
             distance = distance + difference * difference
         end do
     end subroutine squared_l2_distance_device
 
     ! Compare one query vector with one database vector using inner product.
     ! The database is logically shaped as: (dimension, vector_count)
-    ! Each database vector occupies one contiguous Fortran column.
+    ! EQuery and database vectors occupies contiguous Fortran column.
     attributes(device) subroutine inner_product_device( &
-        query_vector, &
+        query_vectors, &
         database_vectors, &
         dimension, &
+        query_vector_index, &
         database_vector_index, &
         similarity &
     )
-        real(real32), device, intent(in) :: query_vector(*)
+        real(real32), device, intent(in) :: query_vectors(*)
         real(real32), device, intent(in) :: database_vectors(*)
         integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: query_vector_index
         integer(int64), value, intent(in) :: database_vector_index
         real(real32), intent(out) :: similarity
 
         integer(int64) :: dimension_index
+        integer(int64) :: query_start
+        integer(int64) :: query_element
         integer(int64) :: database_start
         integer(int64) :: database_element
 
+        query_start = (query_vector_index - 1_int64) * dimension
         database_start = (database_vector_index - 1_int64) * dimension
         similarity = 0.0_real32
 
         do dimension_index = 1_int64, dimension
+            query_element = query_start + dimension_index
             database_element = database_start + dimension_index
-            similarity = similarity + query_vector(dimension_index) * database_vectors(database_element)
+            similarity = similarity + query_vectors(query_element) * database_vectors(database_element)
         end do
     end subroutine inner_product_device
 
@@ -98,6 +114,7 @@ contains
             query_vector, &
             database_vectors, &
             dimension, &
+            1_int64, &
             database_vector_index, &
             distances(database_vector_index) &
         )
@@ -127,10 +144,93 @@ contains
             query_vector, &
             database_vectors, &
             dimension, &
+            1_int64, &
             database_vector_index, &
             similarities(database_vector_index) &
         )
     end subroutine ip_database_kernel
+
+    ! Score every query vector against every database vector using squared L2 distance.
+    ! One CUDA thread processes one query-database pair.
+    attributes(global) subroutine l2_database_batch_kernel( & 
+        query_vectors, &
+        database_vectors, &
+        dimension, &
+        query_count, &
+        database_vector_count, &
+        distances &
+    )
+        real(real32), device, intent(in) :: query_vectors(*)
+        real(real32), device, intent(in) :: database_vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: query_count
+        integer(int64), value, intent(in) :: database_vector_count
+        real(real32), device, intent(out) :: distances(*)
+
+        integer(int64) :: pair_count
+        integer(int64) :: pair_index
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_index
+
+        pair_count = query_count * database_vector_count
+        pair_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
+        if (pair_index > pair_count) then
+            return
+        end if
+
+        query_vector_index = (pair_index - 1_int64) / database_vector_count + 1_int64
+        database_vector_index = modulo(pair_index - 1_int64, database_vector_count) + 1_int64
+        
+        call squared_l2_distance_device( &
+            query_vectors, &
+            database_vectors, &
+            dimension, &
+            query_vector_index, &
+            database_vector_index, &
+            distances(pair_index) &
+        )
+    end subroutine l2_database_batch_kernel
+
+    ! Score every query vector against every database vector using squared Inner Product.
+    ! One CUDA thread processes one query-database pair.
+    attributes(global) subroutine ip_database_batch_kernel( &
+        query_vectors, &
+        database_vectors, &
+        dimension, &
+        query_count, &
+        database_vector_count, &
+        similarities &
+    )
+        real(real32), device, intent(in) :: query_vectors(*)
+        real(real32), device, intent(in) :: database_vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: query_count
+        integer(int64), value, intent(in) :: database_vector_count
+        real(real32), device, intent(out) :: similarities(*)
+
+        integer(int64) :: pair_count
+        integer(int64) :: pair_index
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_index
+
+        pair_count = query_count * database_vector_count
+        pair_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
+        if (pair_index > pair_count) then
+            return
+        end if
+
+        query_vector_index = (pair_index - 1_int64) / database_vector_count + 1_int64
+        database_vector_index = modulo(pair_index - 1_int64, database_vector_count) + 1_int64
+
+        call inner_product_device( &
+            query_vectors, &
+            database_vectors, &
+            dimension, &
+            query_vector_index, &
+            database_vector_index, &
+            similarities(pair_index) &
+        )
+    end subroutine ip_database_batch_kernel
 
     ! Score one query vector against the complete database using squared L2 distance on the GPU.
     ! This is an ordinary CPU-host procedure that launches l2_database_kernel() on the GPU
@@ -283,6 +383,175 @@ contains
         )
     end subroutine ip_database_cuda
 
+    ! Score every query vector against every database vector using squared L2 distance on the GPU.
+    subroutine l2_database_batch_cuda( &
+        query_vectors, &
+        database_vectors, &
+        distances &
+    )
+        ! Host matrices:
+        ! query_vectors:    (dimension, query_count)
+        ! database_vectors: (dimension, database_vector_count)
+        ! distances:        (database_vector_count, query_count)
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: distances(size(database_vectors, dim=2), size(query_vectors, dim=2))
+
+        ! Device matrices stored in GPU memory.
+        real(real32), allocatable, device :: d_query_vectors(:, :)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        real(real32), allocatable, device :: d_distances(:, :)
+
+        integer(int64) :: dimension
+        integer(int64) :: query_count
+        integer(int64) :: database_vector_count
+        integer(int64) :: pair_count
+        integer :: grid_size
+        integer :: status
+
+        dimension = size(query_vectors, dim=1, kind=int64)
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop "Queries and database vectors must have equal dimensions."
+        end if
+        if (query_count == 0_int64) then
+            return
+        end if
+        if (database_vector_count == 0_int64) then
+            return
+        end if
+
+        pair_count = query_count * database_vector_count
+        allocate( &
+            d_query_vectors(dimension, query_count), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_distances(database_vector_count, query_count) &
+        )
+        d_query_vectors = query_vectors
+        d_database_vectors = database_vectors
+
+        ! Calculate number of CUDA blocks
+        grid_size = int((pair_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        
+        ! Launch the L2 batch kernel
+        call l2_database_batch_kernel<<<grid_size, cuda_block_size>>>( &
+            d_query_vectors, &
+            d_database_vectors, &
+            dimension, &
+            query_count, &
+            database_vector_count, &
+            d_distances &
+        )
+
+        status = cudaGetLastError()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA Batched L2 kernel launch failed with status ", status
+            error stop "l2_database_batch_kernel launch failed"
+        end if
+        status = cudaDeviceSynchronize()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA Batched L2 kernel execution failed with status ", status
+            error stop "l2_database_batch_kernel execution failed"
+        end if
+
+        ! copy distances back to CPU
+        distances = d_distances
+        ! free GPU memory
+        deallocate( &
+            d_query_vectors, &
+            d_database_vectors, &
+            d_distances &
+        )
+    end subroutine l2_database_batch_cuda
+
+    ! Score every query vector against every database vector using inner product on the GPU.
+    subroutine ip_database_batch_cuda( &
+        query_vectors, &
+        database_vectors, &
+        similarities &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: similarities(size(database_vectors, dim=2), size(query_vectors, dim=2))
+
+        real(real32), allocatable, device :: d_query_vectors(:, :)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        real(real32), allocatable, device :: d_similarities(:, :)
+
+        integer(int64) :: dimension
+        integer(int64) :: query_count
+        integer(int64) :: database_vector_count
+        integer(int64) :: pair_count
+        integer :: grid_size
+        integer :: status
+
+        dimension = size(query_vectors, dim=1, kind=int64)
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop "Queries and database vectors must have equal dimensions."
+        end if
+        if (query_count == 0_int64) then
+            return
+        end if
+        if (database_vector_count == 0_int64) then
+            return
+        end if
+
+        pair_count = query_count * database_vector_count
+        allocate( &
+            d_query_vectors(dimension, query_count), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_similarities(database_vector_count, query_count) &
+        )
+        d_query_vectors = query_vectors
+        d_database_vectors = database_vectors
+
+        ! Calculate number of CUDA blocks
+        grid_size = int((pair_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        
+        ! Launch the IP Batched kernel
+        call ip_database_batch_kernel<<<grid_size, cuda_block_size>>>( &
+            d_query_vectors, &
+            d_database_vectors, &
+            dimension, &
+            query_count, &
+            database_vector_count, &
+            d_similarities &
+        )
+
+        status = cudaGetLastError()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA Batched IP kernel launch failed with status ", status
+            error stop "ip_database_batch_kernel launch failed"
+        end if
+        status = cudaDeviceSynchronize()
+        if (status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "CUDA Batched IP kernel execution failed with status ", status
+            error stop "ip_database_batch_kernel execution failed"
+        end if
+
+        ! copy similarities back to CPU
+        similarities = d_similarities
+        ! free gpu memory
+        deallocate( &
+            d_query_vectors, &
+            d_database_vectors, &
+            d_similarities &
+        )
+    end subroutine ip_database_batch_cuda
+
     ! Exact squared L2 search using CUDA database scoring
     ! followed by deterministic CPU top-k selection.
     subroutine l2_search_cuda( &
@@ -376,5 +645,113 @@ contains
 
         deallocate(similarities)
     end subroutine ip_search_cuda
+
+    ! Exact Batched squared L2 search using CUDA batched database scoring
+    ! followed by deterministic CPU top-k selection.
+    subroutine l2_search_batch_cuda( &
+        query_vectors, &
+        database_vectors, &
+        k, &
+        topk_distances, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_distances(k, size(query_vectors, dim=2))
+        integer(int64), intent(out) :: topk_indices(k, size(query_vectors, dim=2))
+
+        real(real32), allocatable :: distances(:, :)
+        integer(int64) :: query_count
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_count
+
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate
+        if (query_count < 1_int64) then
+            error stop "Query batch must contain at least one vector."
+        end if
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(distances(database_vector_count, query_count))
+
+        ! run batched gpu scoring
+        call l2_database_batch_cuda( &
+            query_vectors, &
+            database_vectors, &
+            distances &
+        )
+        ! Run deterministic CPU top-k independently for each query.
+        do query_vector_index = 1_int64, query_count
+            call topk_smallest( &
+                distances(:, query_vector_index), &
+                k, &
+                topk_distances(:, query_vector_index), &
+                topk_indices(:, query_vector_index) &
+            )
+        end do
+        deallocate(distances)
+    end subroutine l2_search_batch_cuda
+
+    ! Exact Batched Inner Product search using CUDA batched database scoring
+    ! followed by deterministic CPU top-k selection.
+    subroutine ip_search_batch_cuda( &
+        query_vectors, &
+        database_vectors, &
+        k, &
+        topk_similarities, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_similarities(k, size(query_vectors, dim=2))
+        integer(int64), intent(out) :: topk_indices(k, size(query_vectors, dim=2))
+
+        real(real32), allocatable :: similarities(:, :)
+        integer(int64) :: query_count
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_count
+
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate
+        if (query_count < 1_int64) then
+            error stop "Query batch must contain at least one vector."
+        end if
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(similarities(database_vector_count, query_count))
+
+        ! run batched gpu scoring
+        call ip_database_batch_cuda( &
+            query_vectors, &
+            database_vectors, &
+            similarities &
+        )
+        ! Run deterministic CPU top-k independently for each query.
+        do query_vector_index = 1_int64, query_count
+            call topk_largest( &
+                similarities(:, query_vector_index), &
+                k, &
+                topk_similarities(:, query_vector_index), &
+                topk_indices(:, query_vector_index) &
+            )
+        end do
+        deallocate(similarities)
+    end subroutine ip_search_batch_cuda
 
 end module fnlp_vector_search_cuda_core

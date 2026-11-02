@@ -2,7 +2,7 @@
 
 ## Status
 
-**30% complete**
+**40% complete**
 
 Target release: `0.1.1`
 
@@ -21,9 +21,13 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
 - [x] Added public single-query scoring wrappers
   - `ip_database_cuda`
   - `l2_database_cuda`
-- [x] Added native CUDA Fortran correctness tests for single-query scoring
+- [x] Added native CUDA Fortran correctness tests
   - manually verified scores
-  - CPU/CUDA equivalence
+  - single-query CPU/CUDA equivalence
+  - batched score-matrix CPU/CUDA equivalence
+  - batch size one
+  - single and batched top-k equivalence
+  - deterministic ties and zero-based indices
   - multiple CUDA blocks
   - one-dimensional vectors
   - zero and negative values
@@ -32,6 +36,12 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - `topk_largest` for inner product and cosine
   - `topk_smallest` for squared L2
   - deterministic ties and zero-based indices
+- [x] Implemented handwritten batched CUDA Fortran scoring
+  - batched inner product
+  - batched squared L2
+  - one CUDA thread per query-database pair
+  - complete score matrices copied back to the host
+  - deterministic CPU top-k per query
 
 ## Remaining
 
@@ -40,13 +50,8 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - `vector_search_cublas.cuf`
   - `vector_search_cuda_c_api.cuf`
   - `fortran_nlp_cuda_vector_search.h`
-- [ ] Implement handwritten CUDA Fortran scoring
-  - batched inner product
-  - batched squared L2
-  - cosine through normalized inner product
-- [ ] Extend native CUDA Fortran correctness tests
-  - batched scoring
-  - cosine-compatible normalized scoring
+- [ ] Route normalized cosine inputs through handwritten CUDA inner product
+- [ ] Add cosine-compatible normalized scoring tests
 - [ ] Implement cuBLAS scoring
   - SGEMV single-query path
   - SGEMM batched-query path

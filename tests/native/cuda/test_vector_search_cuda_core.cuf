@@ -2,682 +2,331 @@ program test_vector_search_cuda_core
     use, intrinsic :: iso_fortran_env, only: real32, int64
 
     use fnlp_vector_search_core, only: &
-        l2_database_serial, &
-        ip_database_serial, &
-        l2_search_serial, &
-        ip_search_serial
+        l2_database_serial, ip_database_serial, &
+        l2_search_serial, ip_search_serial
 
     use fnlp_vector_search_cuda_core, only: &
-        l2_database_cuda, &
-        ip_database_cuda, &
-        l2_search_cuda, &
-        ip_search_cuda
+        l2_database_cuda, ip_database_cuda, &
+        l2_search_cuda, ip_search_cuda, &
+        l2_database_batch_cuda, ip_database_batch_cuda, &
+        l2_search_batch_cuda, ip_search_batch_cuda
 
     implicit none
 
-    call test_known_scores()
-    call test_multiple_cuda_blocks()
+    call test_known_single_scores()
+    call test_single_multiple_blocks()
     call test_single_dimension()
     call test_zero_and_negative_values()
     call test_empty_database()
-    call test_l2_search()
-    call test_ip_search()
-    call test_deterministic_ties()
+    call test_single_search()
+    call test_single_deterministic_ties()
+    call test_batch_score_matrices()
+    call test_batch_size_one()
+    call test_batch_search()
+    call test_batch_deterministic_ties()
+    call test_multiple_batch_cuda_blocks()
 
     print *, "CUDA vector-search core tests passed"
 
 contains
 
-    subroutine test_known_scores()
+    subroutine test_known_single_scores()
         integer, parameter :: dimension = 3
-        integer, parameter :: database_vector_count = 4
+        integer, parameter :: vector_count = 4
+        real(real32) :: query(dimension)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count), cuda_l2(vector_count)
+        real(real32) :: cpu_ip(vector_count), cuda_ip(vector_count)
+        real(real32) :: expected_l2(vector_count)
+        real(real32) :: expected_ip(vector_count)
 
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
+        query = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 2) = [2.0_real32, 0.0_real32, 4.0_real32]
+        database(:, 3) = [-1.0_real32, -2.0_real32, -3.0_real32]
+        database(:, 4) = 0.0_real32
+        expected_l2 = [0.0_real32, 6.0_real32, 56.0_real32, 14.0_real32]
+        expected_ip = [14.0_real32, 14.0_real32, -14.0_real32, 0.0_real32]
 
-        real(real32) :: cpu_l2(database_vector_count)
-        real(real32) :: cuda_l2(database_vector_count)
-        real(real32) :: cpu_ip(database_vector_count)
-        real(real32) :: cuda_ip(database_vector_count)
+        call l2_database_serial(query, database, cpu_l2)
+        call l2_database_cuda(query, database, cuda_l2)
+        call ip_database_serial(query, database, cpu_ip)
+        call ip_database_cuda(query, database, cuda_ip)
 
-        real(real32) :: expected_l2(database_vector_count)
-        real(real32) :: expected_ip(database_vector_count)
-
-        query_vector = [ &
-            1.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-
-        database_vectors(:, 1) = [ &
-            1.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-
-        database_vectors(:, 2) = [ &
-            2.0_real32, &
-            0.0_real32, &
-            4.0_real32 &
-        ]
-
-        database_vectors(:, 3) = [ &
-            -1.0_real32, &
-            -2.0_real32, &
-            -3.0_real32 &
-        ]
-
-        database_vectors(:, 4) = [ &
-            0.0_real32, &
-            0.0_real32, &
-            0.0_real32 &
-        ]
-
-        expected_l2 = [ &
-            0.0_real32, &
-            6.0_real32, &
-            56.0_real32, &
-            14.0_real32 &
-        ]
-
-        expected_ip = [ &
-            14.0_real32, &
-            14.0_real32, &
-            -14.0_real32, &
-            0.0_real32 &
-        ]
-
-        call l2_database_serial( &
-            query_vector, &
-            database_vectors, &
-            cpu_l2 &
-        )
-
-        call l2_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_l2 &
-        )
-
-        call ip_database_serial( &
-            query_vector, &
-            database_vectors, &
-            cpu_ip &
-        )
-
-        call ip_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_ip &
-        )
-
-        call assert_real32_vector_close( &
-            cpu_l2, &
-            expected_l2, &
-            "known CPU L2 scores" &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_l2, &
-            expected_l2, &
-            "known CUDA L2 scores" &
-        )
-
-        call assert_real32_vector_close( &
-            cpu_ip, &
-            expected_ip, &
-            "known CPU IP scores" &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_ip, &
-            expected_ip, &
-            "known CUDA IP scores" &
-        )
-
+        call assert_real32_vector_close(cpu_l2, expected_l2, "known CPU L2")
+        call assert_real32_vector_close(cuda_l2, expected_l2, "known CUDA L2")
+        call assert_real32_vector_close(cpu_ip, expected_ip, "known CPU IP")
+        call assert_real32_vector_close(cuda_ip, expected_ip, "known CUDA IP")
         print *, "Known vector scores: PASS"
-    end subroutine test_known_scores
+    end subroutine test_known_single_scores
 
 
-    subroutine test_multiple_cuda_blocks()
+    subroutine test_single_multiple_blocks()
         integer, parameter :: dimension = 17
-        integer, parameter :: database_vector_count = 600
+        integer, parameter :: vector_count = 600
+        real(real32) :: query(dimension)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count), cuda_l2(vector_count)
+        real(real32) :: cpu_ip(vector_count), cuda_ip(vector_count)
+        integer :: d, v
 
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
-
-        real(real32) :: cpu_l2(database_vector_count)
-        real(real32) :: cuda_l2(database_vector_count)
-        real(real32) :: cpu_ip(database_vector_count)
-        real(real32) :: cuda_ip(database_vector_count)
-
-        integer :: dimension_index
-        integer :: database_vector_index
-
-        do dimension_index = 1, dimension
-            query_vector(dimension_index) = &
-                real(dimension_index - 9, kind=real32) / &
-                7.0_real32
+        do d = 1, dimension
+            query(d) = real(d - 9, real32) / 7.0_real32
         end do
-
-        do database_vector_index = 1, database_vector_count
-            do dimension_index = 1, dimension
-                database_vectors( &
-                    dimension_index, &
-                    database_vector_index &
-                ) = real( &
-                    modulo( &
-                        dimension_index * 13 &
-                        + database_vector_index * 7, &
-                        41 &
-                    ) - 20, &
-                    kind=real32 &
-                ) / 9.0_real32
+        do v = 1, vector_count
+            do d = 1, dimension
+                database(d, v) = real(modulo(d * 13 + v * 7, 41) - 20, real32) / 9.0_real32
             end do
         end do
 
-        call l2_database_serial( &
-            query_vector, &
-            database_vectors, &
-            cpu_l2 &
-        )
-
-        call l2_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_l2 &
-        )
-
-        call ip_database_serial( &
-            query_vector, &
-            database_vectors, &
-            cpu_ip &
-        )
-
-        call ip_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_ip &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_l2, &
-            cpu_l2, &
-            "multi-block CUDA L2 scores" &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_ip, &
-            cpu_ip, &
-            "multi-block CUDA IP scores" &
-        )
-
+        call l2_database_serial(query, database, cpu_l2)
+        call l2_database_cuda(query, database, cuda_l2)
+        call ip_database_serial(query, database, cpu_ip)
+        call ip_database_cuda(query, database, cuda_ip)
+        call assert_real32_vector_close(cuda_l2, cpu_l2, "multi-block single L2")
+        call assert_real32_vector_close(cuda_ip, cpu_ip, "multi-block single IP")
         print *, "Multiple CUDA blocks: PASS"
-    end subroutine test_multiple_cuda_blocks
+    end subroutine test_single_multiple_blocks
 
 
     subroutine test_single_dimension()
-        integer, parameter :: dimension = 1
-        integer, parameter :: database_vector_count = 5
-
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
-
-        real(real32) :: cuda_l2(database_vector_count)
-        real(real32) :: cuda_ip(database_vector_count)
-
-        real(real32) :: expected_l2(database_vector_count)
-        real(real32) :: expected_ip(database_vector_count)
-
-        query_vector = [2.0_real32]
-
-        database_vectors(1, :) = [ &
-            -2.0_real32, &
-            0.0_real32, &
-            2.0_real32, &
-            3.0_real32, &
-            5.0_real32 &
-        ]
-
-        expected_l2 = [ &
-            16.0_real32, &
-            4.0_real32, &
-            0.0_real32, &
-            1.0_real32, &
-            9.0_real32 &
-        ]
-
-        expected_ip = [ &
-            -4.0_real32, &
-            0.0_real32, &
-            4.0_real32, &
-            6.0_real32, &
-            10.0_real32 &
-        ]
-
-        call l2_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_l2 &
-        )
-
-        call ip_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_ip &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_l2, &
-            expected_l2, &
-            "single-dimension CUDA L2 scores" &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_ip, &
-            expected_ip, &
-            "single-dimension CUDA IP scores" &
-        )
-
+        real(real32) :: query(1), database(1, 5)
+        real(real32) :: cuda_l2(5), cuda_ip(5)
+        query = [2.0_real32]
+        database(1, :) = [-2.0_real32, 0.0_real32, 2.0_real32, 3.0_real32, 5.0_real32]
+        call l2_database_cuda(query, database, cuda_l2)
+        call ip_database_cuda(query, database, cuda_ip)
+        call assert_real32_vector_close(cuda_l2, &
+            [16.0_real32, 4.0_real32, 0.0_real32, 1.0_real32, 9.0_real32], &
+            "single-dimension L2")
+        call assert_real32_vector_close(cuda_ip, &
+            [-4.0_real32, 0.0_real32, 4.0_real32, 6.0_real32, 10.0_real32], &
+            "single-dimension IP")
         print *, "Single-dimension vectors: PASS"
     end subroutine test_single_dimension
 
 
     subroutine test_zero_and_negative_values()
-        integer, parameter :: dimension = 4
-        integer, parameter :: database_vector_count = 3
-
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
-
-        real(real32) :: cpu_l2(database_vector_count)
-        real(real32) :: cuda_l2(database_vector_count)
-        real(real32) :: cpu_ip(database_vector_count)
-        real(real32) :: cuda_ip(database_vector_count)
-
-        query_vector = [ &
-            0.0_real32, &
-            -2.5_real32, &
-            4.0_real32, &
-            -1.0_real32 &
-        ]
-
-        database_vectors(:, 1) = 0.0_real32
-
-        database_vectors(:, 2) = [ &
-            -3.0_real32, &
-            2.0_real32, &
-            -4.0_real32, &
-            1.0_real32 &
-        ]
-
-        database_vectors(:, 3) = query_vector
-
-        call l2_database_serial( &
-            query_vector, &
-            database_vectors, &
-            cpu_l2 &
-        )
-
-        call l2_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_l2 &
-        )
-
-        call ip_database_serial( &
-            query_vector, &
-            database_vectors, &
-            cpu_ip &
-        )
-
-        call ip_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_ip &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_l2, &
-            cpu_l2, &
-            "zero-negative CUDA L2 scores" &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_ip, &
-            cpu_ip, &
-            "zero-negative CUDA IP scores" &
-        )
-
+        real(real32) :: query(4), database(4, 3)
+        real(real32) :: cpu_l2(3), cuda_l2(3), cpu_ip(3), cuda_ip(3)
+        query = [0.0_real32, -2.5_real32, 4.0_real32, -1.0_real32]
+        database(:, 1) = 0.0_real32
+        database(:, 2) = [-3.0_real32, 2.0_real32, -4.0_real32, 1.0_real32]
+        database(:, 3) = query
+        call l2_database_serial(query, database, cpu_l2)
+        call l2_database_cuda(query, database, cuda_l2)
+        call ip_database_serial(query, database, cpu_ip)
+        call ip_database_cuda(query, database, cuda_ip)
+        call assert_real32_vector_close(cuda_l2, cpu_l2, "zero-negative L2")
+        call assert_real32_vector_close(cuda_ip, cpu_ip, "zero-negative IP")
         print *, "Zero and negative values: PASS"
     end subroutine test_zero_and_negative_values
 
 
     subroutine test_empty_database()
-        integer, parameter :: dimension = 3
-
-        real(real32) :: query_vector(dimension)
-        real(real32), allocatable :: database_vectors(:, :)
-        real(real32), allocatable :: cuda_l2(:)
-        real(real32), allocatable :: cuda_ip(:)
-
-        query_vector = [ &
-            1.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-
-        allocate(database_vectors(dimension, 0))
-        allocate(cuda_l2(0))
-        allocate(cuda_ip(0))
-
-        call l2_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_l2 &
-        )
-
-        call ip_database_cuda( &
-            query_vector, &
-            database_vectors, &
-            cuda_ip &
-        )
-
-        if (size(cuda_l2) /= 0) then
-            error stop "Empty CUDA L2 output must have size zero"
-        end if
-
-        if (size(cuda_ip) /= 0) then
-            error stop "Empty CUDA IP output must have size zero"
-        end if
-
-        deallocate(database_vectors)
-        deallocate(cuda_l2)
-        deallocate(cuda_ip)
-
+        real(real32) :: query(3)
+        real(real32), allocatable :: database(:, :), cuda_l2(:), cuda_ip(:)
+        query = [1.0_real32, 2.0_real32, 3.0_real32]
+        allocate(database(3, 0), cuda_l2(0), cuda_ip(0))
+        call l2_database_cuda(query, database, cuda_l2)
+        call ip_database_cuda(query, database, cuda_ip)
+        if (size(cuda_l2) /= 0 .or. size(cuda_ip) /= 0) &
+            error stop "Empty output must have size zero"
+        deallocate(database, cuda_l2, cuda_ip)
         print *, "Empty database: PASS"
     end subroutine test_empty_database
 
 
-    subroutine test_l2_search()
-        integer, parameter :: dimension = 3
-        integer, parameter :: database_vector_count = 5
+    subroutine test_single_search()
         integer, parameter :: k = 3
-
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
-
-        real(real32) :: cpu_distances(k)
-        real(real32) :: cuda_distances(k)
-        integer(int64) :: cpu_indices(k)
-        integer(int64) :: cuda_indices(k)
-
-        query_vector = [ &
-            1.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-
-        database_vectors(:, 1) = query_vector
-        database_vectors(:, 2) = [ &
-            2.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-        database_vectors(:, 3) = [ &
-            1.0_real32, &
-            4.0_real32, &
-            3.0_real32 &
-        ]
-        database_vectors(:, 4) = [ &
-            0.0_real32, &
-            0.0_real32, &
-            0.0_real32 &
-        ]
-        database_vectors(:, 5) = [ &
-            -1.0_real32, &
-            -2.0_real32, &
-            -3.0_real32 &
-        ]
-
-        call l2_search_serial( &
-            query_vector, &
-            database_vectors, &
-            k, &
-            cpu_distances, &
-            cpu_indices &
-        )
-
-        call l2_search_cuda( &
-            query_vector, &
-            database_vectors, &
-            k, &
-            cuda_distances, &
-            cuda_indices &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_distances, &
-            cpu_distances, &
-            "CUDA L2 top-k distances" &
-        )
-
-        call assert_int64_vector_equal( &
-            cuda_indices, &
-            cpu_indices, &
-            "CUDA L2 top-k indices" &
-        )
-
-        print *, "CUDA L2 search with CPU top-k: PASS"
-    end subroutine test_l2_search
+        real(real32) :: query(3), database(3, 5)
+        real(real32) :: cpu_l2(k), cuda_l2(k), cpu_ip(k), cuda_ip(k)
+        integer(int64) :: cpu_l2_i(k), cuda_l2_i(k), cpu_ip_i(k), cuda_ip_i(k)
+        query = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 1) = query
+        database(:, 2) = [2.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 3) = [1.0_real32, 4.0_real32, 3.0_real32]
+        database(:, 4) = 0.0_real32
+        database(:, 5) = [-1.0_real32, -2.0_real32, -3.0_real32]
+        call l2_search_serial(query, database, k, cpu_l2, cpu_l2_i)
+        call l2_search_cuda(query, database, k, cuda_l2, cuda_l2_i)
+        call ip_search_serial(query, database, k, cpu_ip, cpu_ip_i)
+        call ip_search_cuda(query, database, k, cuda_ip, cuda_ip_i)
+        call assert_real32_vector_close(cuda_l2, cpu_l2, "single L2 top-k")
+        call assert_int64_vector_equal(cuda_l2_i, cpu_l2_i, "single L2 indices")
+        call assert_real32_vector_close(cuda_ip, cpu_ip, "single IP top-k")
+        call assert_int64_vector_equal(cuda_ip_i, cpu_ip_i, "single IP indices")
+        print *, "CUDA single search with CPU top-k: PASS"
+    end subroutine test_single_search
 
 
-    subroutine test_ip_search()
-        integer, parameter :: dimension = 3
-        integer, parameter :: database_vector_count = 5
-        integer, parameter :: k = 3
-
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
-
-        real(real32) :: cpu_similarities(k)
-        real(real32) :: cuda_similarities(k)
-        integer(int64) :: cpu_indices(k)
-        integer(int64) :: cuda_indices(k)
-
-        query_vector = [ &
-            1.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-
-        database_vectors(:, 1) = query_vector
-        database_vectors(:, 2) = [ &
-            2.0_real32, &
-            2.0_real32, &
-            3.0_real32 &
-        ]
-        database_vectors(:, 3) = [ &
-            1.0_real32, &
-            4.0_real32, &
-            3.0_real32 &
-        ]
-        database_vectors(:, 4) = 0.0_real32
-        database_vectors(:, 5) = [ &
-            -1.0_real32, &
-            -2.0_real32, &
-            -3.0_real32 &
-        ]
-
-        call ip_search_serial( &
-            query_vector, &
-            database_vectors, &
-            k, &
-            cpu_similarities, &
-            cpu_indices &
-        )
-
-        call ip_search_cuda( &
-            query_vector, &
-            database_vectors, &
-            k, &
-            cuda_similarities, &
-            cuda_indices &
-        )
-
-        call assert_real32_vector_close( &
-            cuda_similarities, &
-            cpu_similarities, &
-            "CUDA IP top-k similarities" &
-        )
-
-        call assert_int64_vector_equal( &
-            cuda_indices, &
-            cpu_indices, &
-            "CUDA IP top-k indices" &
-        )
-
-        print *, "CUDA IP search with CPU top-k: PASS"
-    end subroutine test_ip_search
-
-
-    subroutine test_deterministic_ties()
-        integer, parameter :: dimension = 2
-        integer, parameter :: database_vector_count = 4
-        integer, parameter :: k = database_vector_count
-
-        real(real32) :: query_vector(dimension)
-        real(real32) :: database_vectors( &
-            dimension, &
-            database_vector_count &
-        )
-
-        real(real32) :: l2_distances(k)
-        real(real32) :: ip_similarities(k)
-        integer(int64) :: l2_indices(k)
-        integer(int64) :: ip_indices(k)
-
-        integer(int64) :: expected_indices(k)
-
-        query_vector = [ &
-            1.0_real32, &
-            1.0_real32 &
-        ]
-
-        database_vectors(:, 1) = [ &
-            1.0_real32, &
-            0.0_real32 &
-        ]
-        database_vectors(:, 2) = [ &
-            0.0_real32, &
-            1.0_real32 &
-        ]
-        database_vectors(:, 3) = [ &
-            1.0_real32, &
-            0.0_real32 &
-        ]
-        database_vectors(:, 4) = [ &
-            0.0_real32, &
-            1.0_real32 &
-        ]
-
-        expected_indices = [ &
-            0_int64, &
-            1_int64, &
-            2_int64, &
-            3_int64 &
-        ]
-
-        call l2_search_cuda( &
-            query_vector, &
-            database_vectors, &
-            k, &
-            l2_distances, &
-            l2_indices &
-        )
-
-        call ip_search_cuda( &
-            query_vector, &
-            database_vectors, &
-            k, &
-            ip_similarities, &
-            ip_indices &
-        )
-
-        call assert_int64_vector_equal( &
-            l2_indices, &
-            expected_indices, &
-            "deterministic L2 tie indices" &
-        )
-
-        call assert_int64_vector_equal( &
-            ip_indices, &
-            expected_indices, &
-            "deterministic IP tie indices" &
-        )
-
-        call assert_real32_vector_close( &
-            l2_distances, &
-            [ &
-                1.0_real32, &
-                1.0_real32, &
-                1.0_real32, &
-                1.0_real32 &
-            ], &
-            "deterministic L2 tie values" &
-        )
-
-        call assert_real32_vector_close( &
-            ip_similarities, &
-            [ &
-                1.0_real32, &
-                1.0_real32, &
-                1.0_real32, &
-                1.0_real32 &
-            ], &
-            "deterministic IP tie values" &
-        )
-
+    subroutine test_single_deterministic_ties()
+        integer, parameter :: k = 4
+        real(real32) :: query(2), database(2, 4), l2(k), ip(k)
+        integer(int64) :: l2_i(k), ip_i(k), expected(k)
+        query = [1.0_real32, 1.0_real32]
+        database(:, 1) = [1.0_real32, 0.0_real32]
+        database(:, 2) = [0.0_real32, 1.0_real32]
+        database(:, 3) = database(:, 1)
+        database(:, 4) = database(:, 2)
+        expected = [0_int64, 1_int64, 2_int64, 3_int64]
+        call l2_search_cuda(query, database, k, l2, l2_i)
+        call ip_search_cuda(query, database, k, ip, ip_i)
+        call assert_int64_vector_equal(l2_i, expected, "single L2 ties")
+        call assert_int64_vector_equal(ip_i, expected, "single IP ties")
         print *, "Deterministic CPU top-k ties: PASS"
-    end subroutine test_deterministic_ties
+    end subroutine test_single_deterministic_ties
 
 
-    subroutine assert_int64_vector_equal( &
-        actual, &
-        expected, &
-        label &
-    )
-        integer(int64), intent(in) :: actual(:)
-        integer(int64), intent(in) :: expected(:)
+    subroutine test_batch_score_matrices()
+        integer, parameter :: dimension = 3, query_count = 3, vector_count = 4
+        real(real32) :: queries(dimension, query_count)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count, query_count), cuda_l2(vector_count, query_count)
+        real(real32) :: cpu_ip(vector_count, query_count), cuda_ip(vector_count, query_count)
+        integer :: q
+        queries(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        queries(:, 2) = [-1.0_real32, 0.5_real32, 2.0_real32]
+        queries(:, 3) = [0.0_real32, -2.0_real32, 1.0_real32]
+        database(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 2) = [2.0_real32, 0.0_real32, 4.0_real32]
+        database(:, 3) = [-1.0_real32, -2.0_real32, -3.0_real32]
+        database(:, 4) = 0.0_real32
+        do q = 1, query_count
+            call l2_database_serial(queries(:, q), database, cpu_l2(:, q))
+            call ip_database_serial(queries(:, q), database, cpu_ip(:, q))
+        end do
+        call l2_database_batch_cuda(queries, database, cuda_l2)
+        call ip_database_batch_cuda(queries, database, cuda_ip)
+        call assert_real32_matrix_close(cuda_l2, cpu_l2, "batch L2 matrix")
+        call assert_real32_matrix_close(cuda_ip, cpu_ip, "batch IP matrix")
+        print *, "Batched CUDA score matrices: PASS"
+    end subroutine test_batch_score_matrices
+
+
+    subroutine test_batch_size_one()
+        real(real32) :: queries(4, 1), database(4, 5)
+        real(real32) :: single_l2(5), batch_l2(5, 1), single_ip(5), batch_ip(5, 1)
+        integer :: d, v
+        queries(:, 1) = [1.0_real32, -2.0_real32, 3.0_real32, 0.5_real32]
+        do v = 1, 5
+            do d = 1, 4
+                database(d, v) = real(d - 2 * v, real32) / 3.0_real32
+            end do
+        end do
+        call l2_database_cuda(queries(:, 1), database, single_l2)
+        call l2_database_batch_cuda(queries, database, batch_l2)
+        call ip_database_cuda(queries(:, 1), database, single_ip)
+        call ip_database_batch_cuda(queries, database, batch_ip)
+        call assert_real32_vector_close(batch_l2(:, 1), single_l2, "batch-one L2")
+        call assert_real32_vector_close(batch_ip(:, 1), single_ip, "batch-one IP")
+        print *, "Batch size one: PASS"
+    end subroutine test_batch_size_one
+
+
+    subroutine test_batch_search()
+        integer, parameter :: dimension = 3, query_count = 3, vector_count = 5, k = 3
+        real(real32) :: queries(dimension, query_count), database(dimension, vector_count)
+        real(real32) :: cpu_l2(k, query_count), cuda_l2(k, query_count)
+        real(real32) :: cpu_ip(k, query_count), cuda_ip(k, query_count)
+        integer(int64) :: cpu_l2_i(k, query_count), cuda_l2_i(k, query_count)
+        integer(int64) :: cpu_ip_i(k, query_count), cuda_ip_i(k, query_count)
+        integer :: q
+        queries(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        queries(:, 2) = [2.0_real32, -1.0_real32, 0.5_real32]
+        queries(:, 3) = [-2.0_real32, 1.0_real32, 4.0_real32]
+        database(:, 1) = queries(:, 1)
+        database(:, 2) = [2.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 3) = [1.0_real32, 4.0_real32, 3.0_real32]
+        database(:, 4) = 0.0_real32
+        database(:, 5) = [-1.0_real32, -2.0_real32, -3.0_real32]
+        do q = 1, query_count
+            call l2_search_serial(queries(:, q), database, k, cpu_l2(:, q), cpu_l2_i(:, q))
+            call ip_search_serial(queries(:, q), database, k, cpu_ip(:, q), cpu_ip_i(:, q))
+        end do
+        call l2_search_batch_cuda(queries, database, k, cuda_l2, cuda_l2_i)
+        call ip_search_batch_cuda(queries, database, k, cuda_ip, cuda_ip_i)
+        call assert_real32_matrix_close(cuda_l2, cpu_l2, "batch L2 top-k")
+        call assert_int64_matrix_equal(cuda_l2_i, cpu_l2_i, "batch L2 indices")
+        call assert_real32_matrix_close(cuda_ip, cpu_ip, "batch IP top-k")
+        call assert_int64_matrix_equal(cuda_ip_i, cpu_ip_i, "batch IP indices")
+        print *, "Batched CUDA search with CPU top-k: PASS"
+    end subroutine test_batch_search
+
+
+    subroutine test_batch_deterministic_ties()
+        integer, parameter :: k = 4
+        real(real32) :: queries(2, 2), database(2, 4), l2(k, 2), ip(k, 2)
+        integer(int64) :: l2_i(k, 2), ip_i(k, 2), expected(k, 2)
+        queries(:, 1) = [1.0_real32, 1.0_real32]
+        queries(:, 2) = [-1.0_real32, -1.0_real32]
+        database(:, 1) = [1.0_real32, 0.0_real32]
+        database(:, 2) = [0.0_real32, 1.0_real32]
+        database(:, 3) = database(:, 1)
+        database(:, 4) = database(:, 2)
+        expected(:, 1) = [0_int64, 1_int64, 2_int64, 3_int64]
+        expected(:, 2) = expected(:, 1)
+        call l2_search_batch_cuda(queries, database, k, l2, l2_i)
+        call ip_search_batch_cuda(queries, database, k, ip, ip_i)
+        call assert_int64_matrix_equal(l2_i, expected, "batch L2 ties")
+        call assert_int64_matrix_equal(ip_i, expected, "batch IP ties")
+        print *, "Batched deterministic ties: PASS"
+    end subroutine test_batch_deterministic_ties
+
+
+    subroutine test_multiple_batch_cuda_blocks()
+        integer, parameter :: dimension = 11, query_count = 5, vector_count = 173
+        real(real32) :: queries(dimension, query_count), database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count, query_count), cuda_l2(vector_count, query_count)
+        real(real32) :: cpu_ip(vector_count, query_count), cuda_ip(vector_count, query_count)
+        integer :: d, q, v
+        do q = 1, query_count
+            do d = 1, dimension
+                queries(d, q) = real(modulo(d * 7 + q * 11, 37) - 18, real32) / 8.0_real32
+            end do
+        end do
+        do v = 1, vector_count
+            do d = 1, dimension
+                database(d, v) = real(modulo(d * 13 + v * 5, 43) - 21, real32) / 9.0_real32
+            end do
+        end do
+        do q = 1, query_count
+            call l2_database_serial(queries(:, q), database, cpu_l2(:, q))
+            call ip_database_serial(queries(:, q), database, cpu_ip(:, q))
+        end do
+        call l2_database_batch_cuda(queries, database, cuda_l2)
+        call ip_database_batch_cuda(queries, database, cuda_ip)
+        call assert_real32_matrix_close(cuda_l2, cpu_l2, "multi-block batch L2")
+        call assert_real32_matrix_close(cuda_ip, cpu_ip, "multi-block batch IP")
+        print *, "Multiple batched CUDA blocks: PASS"
+    end subroutine test_multiple_batch_cuda_blocks
+
+
+    subroutine assert_real32_vector_close(actual, expected, label)
+        real(real32), intent(in) :: actual(:), expected(:)
         character(len=*), intent(in) :: label
+        real(real32), parameter :: atol = 1.0e-5_real32, rtol = 1.0e-5_real32
+        real(real32) :: difference, allowed
+        integer :: i
+        if (size(actual) /= size(expected)) error stop "real32 vector size mismatch"
+        do i = 1, size(actual)
+            difference = abs(actual(i) - expected(i))
+            allowed = atol + rtol * abs(expected(i))
+            if (difference > allowed) then
+                print *, trim(label), " mismatch at ", i
+                print *, "Actual/expected/error/allowed:", actual(i), expected(i), difference, allowed
+                error stop "real32 vector assertion failed"
+            end if
+        end do
+    end subroutine assert_real32_vector_close
 
-        if (size(actual) /= size(expected)) then
-            print *, trim(label), ": vector-size mismatch"
-            print *, "Actual size:  ", size(actual)
-            print *, "Expected size:", size(expected)
-            error stop "int64 vector assertion failed"
-        end if
 
+    subroutine assert_int64_vector_equal(actual, expected, label)
+        integer(int64), intent(in) :: actual(:), expected(:)
+        character(len=*), intent(in) :: label
+        if (size(actual) /= size(expected)) error stop "int64 vector size mismatch"
         if (any(actual /= expected)) then
-            print *, trim(label), ": value mismatch"
+            print *, trim(label), " mismatch"
             print *, "Actual:  ", actual
             print *, "Expected:", expected
             error stop "int64 vector assertion failed"
@@ -685,52 +334,28 @@ contains
     end subroutine assert_int64_vector_equal
 
 
-    subroutine assert_real32_vector_close( &
-        actual, &
-        expected, &
-        label &
-    )
-        real(real32), intent(in) :: actual(:)
-        real(real32), intent(in) :: expected(:)
+    subroutine assert_real32_matrix_close(actual, expected, label)
+        real(real32), intent(in) :: actual(:, :), expected(:, :)
         character(len=*), intent(in) :: label
-
-        real(real32), parameter :: absolute_tolerance = &
-            1.0e-5_real32
-
-        real(real32), parameter :: relative_tolerance = &
-            1.0e-5_real32
-
-        real(real32) :: allowed_error
-        real(real32) :: difference
-
-        integer :: value_index
-
-        if (size(actual) /= size(expected)) then
-            print *, trim(label), ": vector-size mismatch"
-            print *, "Actual size:  ", size(actual)
-            print *, "Expected size:", size(expected)
-            error stop "real32 vector assertion failed"
-        end if
-
-        do value_index = 1, size(actual)
-            difference = abs( &
-                actual(value_index) - expected(value_index) &
-            )
-
-            allowed_error = absolute_tolerance &
-                + relative_tolerance &
-                * abs(expected(value_index))
-
-            if (difference > allowed_error) then
-                print *, trim(label), ": value mismatch"
-                print *, "Index:   ", value_index
-                print *, "Actual:  ", actual(value_index)
-                print *, "Expected:", expected(value_index)
-                print *, "Error:   ", difference
-                print *, "Allowed: ", allowed_error
-                error stop "real32 vector assertion failed"
-            end if
+        integer :: column_index
+        if (any(shape(actual) /= shape(expected))) error stop "real32 matrix shape mismatch"
+        do column_index = 1, size(actual, dim=2)
+            call assert_real32_vector_close(actual(:, column_index), &
+                expected(:, column_index), label)
         end do
-    end subroutine assert_real32_vector_close
+    end subroutine assert_real32_matrix_close
+
+
+    subroutine assert_int64_matrix_equal(actual, expected, label)
+        integer(int64), intent(in) :: actual(:, :), expected(:, :)
+        character(len=*), intent(in) :: label
+        if (any(shape(actual) /= shape(expected))) error stop "int64 matrix shape mismatch"
+        if (any(actual /= expected)) then
+            print *, trim(label), " mismatch"
+            print *, "Actual:  ", actual
+            print *, "Expected:", expected
+            error stop "int64 matrix assertion failed"
+        end if
+    end subroutine assert_int64_matrix_equal
 
 end program test_vector_search_cuda_core
