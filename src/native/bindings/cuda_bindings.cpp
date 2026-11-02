@@ -7,6 +7,7 @@
 #include <nanobind/ndarray.h>
 
 #include "fortran_nlp_cuda_lexical.h"
+#include "fortran_nlp_cuda_vector_search.h"
 
 namespace nb = nanobind;
 
@@ -17,6 +18,21 @@ using Int64Array = nb::ndarray<
     nb::c_contig,
     nb::device::cpu
 >;
+using Float32Vector = nb::ndarray<
+    nb::numpy,
+    const float,
+    nb::ndim<1>,
+    nb::c_contig,
+    nb::device::cpu
+>;
+using Float32MatrixF = nb::ndarray<
+    nb::numpy,
+    const float,
+    nb::ndim<2>,
+    nb::f_contig,
+    nb::device::cpu
+>;
+
 std::int64_t checked_int64_count(
     std::size_t count,
     const char *label
@@ -47,6 +63,27 @@ int checked_int_count(std::size_t count, const char *label)
     }
     return static_cast<int>(count);
 }
+
+using VectorSearchFunction = void (*)(
+    const float *query_vector,
+    const float *database_vectors,
+    int dimension,
+    int vector_count,
+    int k,
+    float *topk_values,
+    std::int64_t *topk_indices
+);
+
+using VectorBatchSearchFunction = void (*)(
+    const float *query_vectors,
+    const float *database_vectors,
+    int dimension,
+    int query_count,
+    int vector_count,
+    int k,
+    float *topk_values,
+    std::int64_t *topk_indices
+);
 
 nb::tuple run_jaccard_cuda(
     const Int64Array &candidate,
@@ -357,6 +394,265 @@ nb::tuple run_jaccard_batch_cuda(
     );
 }
 
+nb::tuple run_vector_search_single(
+    const Float32Vector &query_vector,
+    const Float32MatrixF &database_vectors,
+    int k,
+    VectorSearchFunction search_function
+)
+{
+    const std::size_t dimension_size =
+        query_vector.shape(0);
+
+    const std::size_t database_dimension_size =
+        database_vectors.shape(0);
+
+    const std::size_t vector_count_size =
+        database_vectors.shape(1);
+
+    if (dimension_size == 0) {
+        throw std::invalid_argument(
+            "vector dimension must be greater than zero"
+        );
+    }
+
+    if (vector_count_size == 0) {
+        throw std::invalid_argument(
+            "database must contain at least one vector"
+        );
+    }
+
+    if (database_dimension_size != dimension_size) {
+        throw std::invalid_argument(
+            "query and database vectors must have "
+            "equal dimensions"
+        );
+    }
+
+    if (k < 1) {
+        throw std::invalid_argument(
+            "k must be at least 1"
+        );
+    }
+
+    if (
+        static_cast<std::size_t>(k)
+        > vector_count_size
+    ) {
+        throw std::invalid_argument(
+            "k cannot exceed the database size"
+        );
+    }
+
+    const int dimension = checked_int_count(
+        dimension_size,
+        "vector dimension"
+    );
+
+    const int vector_count = checked_int_count(
+        vector_count_size,
+        "database vector count"
+    );
+
+    nb::module_ numpy = nb::module_::import_("numpy");
+
+    nb::object values_object = numpy.attr("empty")(
+        k,
+        "float32"
+    );
+
+    nb::object indices_object = numpy.attr("empty")(
+        k,
+        "int64"
+    );
+
+    auto values = nb::cast<
+        nb::ndarray<
+            nb::numpy,
+            float,
+            nb::ndim<1>,
+            nb::c_contig,
+            nb::device::cpu
+        >
+    >(values_object);
+
+    auto indices = nb::cast<
+        nb::ndarray<
+            nb::numpy,
+            std::int64_t,
+            nb::ndim<1>,
+            nb::c_contig,
+            nb::device::cpu
+        >
+    >(indices_object);
+
+    {
+        /*
+         * The native CUDA wrapper performs allocation, transfers,
+         * GPU execution, synchronization, result transfer, and
+         * deterministic CPU top-k selection.
+         */
+        nb::gil_scoped_release release;
+
+        search_function(
+            query_vector.data(),
+            database_vectors.data(),
+            dimension,
+            vector_count,
+            k,
+            values.data(),
+            indices.data()
+        );
+    }
+
+    return nb::make_tuple(
+        values_object,
+        indices_object
+    );
+}
+
+nb::tuple run_vector_search_batch(
+    const Float32MatrixF &query_vectors,
+    const Float32MatrixF &database_vectors,
+    int k,
+    VectorBatchSearchFunction search_function
+)
+{
+    const std::size_t dimension_size =
+        query_vectors.shape(0);
+
+    const std::size_t query_count_size =
+        query_vectors.shape(1);
+
+    const std::size_t database_dimension_size =
+        database_vectors.shape(0);
+
+    const std::size_t vector_count_size =
+        database_vectors.shape(1);
+
+    if (dimension_size == 0) {
+        throw std::invalid_argument(
+            "vector dimension must be greater than zero"
+        );
+    }
+
+    if (query_count_size == 0) {
+        throw std::invalid_argument(
+            "query batch must contain at least one vector"
+        );
+    }
+
+    if (vector_count_size == 0) {
+        throw std::invalid_argument(
+            "database must contain at least one vector"
+        );
+    }
+
+    if (database_dimension_size != dimension_size) {
+        throw std::invalid_argument(
+            "queries and database vectors must have "
+            "equal dimensions"
+        );
+    }
+
+    if (k < 1) {
+        throw std::invalid_argument(
+            "k must be at least 1"
+        );
+    }
+
+    if (
+        static_cast<std::size_t>(k)
+        > vector_count_size
+    ) {
+        throw std::invalid_argument(
+            "k cannot exceed the database size"
+        );
+    }
+
+    const int dimension = checked_int_count(
+        dimension_size,
+        "vector dimension"
+    );
+
+    const int query_count = checked_int_count(
+        query_count_size,
+        "query count"
+    );
+
+    const int vector_count = checked_int_count(
+        vector_count_size,
+        "database vector count"
+    );
+
+    nb::module_ numpy = nb::module_::import_("numpy");
+
+    /*
+     * Native batch output shape:
+     *
+     *     (k, query_count)
+     *
+     * Use Fortran-contiguous NumPy arrays to preserve the exact
+     * native storage layout.
+     */
+    const nb::tuple output_shape = nb::make_tuple(
+        k,
+        query_count
+    );
+
+    nb::object values_object = numpy.attr("empty")(
+        output_shape,
+        "float32",
+        "F"
+    );
+
+    nb::object indices_object = numpy.attr("empty")(
+        output_shape,
+        "int64",
+        "F"
+    );
+
+    auto values = nb::cast<
+        nb::ndarray<
+            nb::numpy,
+            float,
+            nb::ndim<2>,
+            nb::f_contig,
+            nb::device::cpu
+        >
+    >(values_object);
+
+    auto indices = nb::cast<
+        nb::ndarray<
+            nb::numpy,
+            std::int64_t,
+            nb::ndim<2>,
+            nb::f_contig,
+            nb::device::cpu
+        >
+    >(indices_object);
+
+    {
+        nb::gil_scoped_release release;
+
+        search_function(
+            query_vectors.data(),
+            database_vectors.data(),
+            dimension,
+            query_count,
+            vector_count,
+            k,
+            values.data(),
+            indices.data()
+        );
+    }
+
+    return nb::make_tuple(
+        values_object,
+        indices_object
+    );
+}
+
 
 NB_MODULE(_cuda, module)
 {
@@ -396,5 +692,124 @@ NB_MODULE(_cuda, module)
         nb::arg("candidate_offsets"),
         nb::arg("corpus_shingles"),
         nb::arg("document_offsets")
+    );
+
+    module.def(
+        "l2_search_cuda",
+        [](const Float32Vector &query_vector,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_single(
+                query_vector,
+                database_vectors,
+                k,
+                fnlp_l2_search_cuda
+            );
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "l2_search_batch_cuda",
+        [](const Float32MatrixF &query_vectors,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_batch(
+                query_vectors,
+                database_vectors,
+                k,
+                fnlp_l2_search_batch_cuda
+            );
+        },
+        nb::arg("query_vectors"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_batch_cuda",
+        [](const Float32MatrixF &query_vectors,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_batch(
+                query_vectors,
+                database_vectors,
+                k,
+                fnlp_ip_search_batch_cuda
+            );
+        },
+        nb::arg("query_vectors"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "l2_search_cublas",
+        [](const Float32Vector &query_vector,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_single(
+                query_vector,
+                database_vectors,
+                k,
+                fnlp_l2_search_cublas
+            );
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_cublas",
+        [](const Float32Vector &query_vector,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_single(
+                query_vector,
+                database_vectors,
+                k,
+                fnlp_ip_search_cublas
+            );
+        },
+        nb::arg("query_vector"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "l2_search_batch_cublas",
+        [](const Float32MatrixF &query_vectors,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_batch(
+                query_vectors,
+                database_vectors,
+                k,
+                fnlp_l2_search_batch_cublas
+            );
+        },
+        nb::arg("query_vectors"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
+    );
+
+    module.def(
+        "ip_search_batch_cublas",
+        [](const Float32MatrixF &query_vectors,
+           const Float32MatrixF &database_vectors,
+           int k) {
+            return run_vector_search_batch(
+                query_vectors,
+                database_vectors,
+                k,
+                fnlp_ip_search_batch_cublas
+            );
+        },
+        nb::arg("query_vectors"),
+        nb::arg("database_vectors"),
+        nb::arg("k")
     );
 }
