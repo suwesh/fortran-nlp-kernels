@@ -2,7 +2,7 @@
 
 ## Status
 
-**40% complete**
+**55% complete**
 
 Target release: `0.1.1`
 
@@ -42,21 +42,35 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - one CUDA thread per query-database pair
   - complete score matrices copied back to the host
   - deterministic CPU top-k per query
+- [x] Implemented cuBLAS scoring
+  - SGEMV single-query inner product
+  - SGEMM batched inner product
+  - GPU-native squared L2 through norm expansion
+  - custom CUDA squared-norm and L2-combination kernels
+  - existing deterministic CPU top-k integration
+- [x] Added native cuBLAS correctness tests
+  - manually verified scores
+  - single-query SGEMV CPU/cuBLAS equivalence
+  - batched SGEMM CPU/cuBLAS equivalence
+  - single and batched top-k equivalence
+  - batch size one
+  - deterministic ties and zero-based indices
+  - one-dimensional vectors
+  - zero and negative values
+  - large single-query database
+  - large query batch
+  - nonnegative L2 rounding clamp
+- [x] Complete CUDA vector-search files
+  - `vector_search_cuda_core.cuf`
+  - `vector_search_cublas.cuf`
 
 ## Remaining
 
 - [ ] Complete CUDA vector-search files
-  - `vector_search_cuda_core.cuf`
-  - `vector_search_cublas.cuf`
   - `vector_search_cuda_c_api.cuf`
   - `fortran_nlp_cuda_vector_search.h`
 - [ ] Route normalized cosine inputs through handwritten CUDA inner product
 - [ ] Add cosine-compatible normalized scoring tests
-- [ ] Implement cuBLAS scoring
-  - SGEMV single-query path
-  - SGEMM batched-query path
-  - squared L2 and cosine support
-  - existing deterministic CPU top-k integration
 - [ ] Add CUDA vector-search C ABI
 - [ ] Add CUDA vector-search C header
 - [ ] Add native C ABI tests
@@ -103,3 +117,30 @@ GPU scoring
 - mixed-precision scoring
 - CUDA performance tuning and benchmarks
 
+## cuBLAS implementation order:
+Recommended order
+Plain Text
+1. ip_database_cublas
+-> learn and verify SGEMV
+ 
+2. ip_search_cublas
+-> SGEMV + CPU top-k
+ 
+3. l2_database_cublas
+-> norm kernels + same SGEMV + L2 combination kernel
+ 
+4. l2_search_cublas
+-> L2 scoring + CPU top-k
+
+Then batch:
+
+Plain Text
+5. ip_database_batch_cublas
+-> SGEMM
+ 
+6. ip_search_batch_cublas
+ 
+7. l2_database_batch_cublas
+-> norm kernels + SGEMM + L2 combination kernel
+ 
+8. l2_search_batch_cublas

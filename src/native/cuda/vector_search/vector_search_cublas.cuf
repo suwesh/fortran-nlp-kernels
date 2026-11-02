@@ -1,0 +1,895 @@
+module fnlp_vector_search_cublas
+    use, intrinsic :: iso_fortran_env, only: real32, int64, error_unit
+    use cudafor
+    use cublas
+    use fnlp_topk_core, only: topk_smallest, topk_largest
+    implicit none
+    private
+    public :: l2_database_cublas
+    public :: ip_database_cublas
+    public :: l2_search_cublas
+    public :: ip_search_cublas
+    public :: l2_database_batch_cublas
+    public :: l2_search_batch_cublas
+    public :: ip_database_batch_cublas
+    public :: ip_search_batch_cublas
+    integer, parameter :: cuda_block_size = 256
+
+contains
+    ! Calculate one squared L2 norm for each vector.
+    ! vectors is logically shaped as: (dimension, vector_count)
+    ! One CUDA thread processes one vector.
+    attributes(global) subroutine squared_norms_kernel( &
+        vectors, &
+        dimension, &
+        vector_count, &
+        squared_norms &
+    )
+        real(real32), device, intent(in) :: vectors(*)
+        integer(int64), value, intent(in) :: dimension
+        integer(int64), value, intent(in) :: vector_count
+        real(real32), device, intent(out) :: squared_norms(*)
+
+        integer(int64) :: vector_index
+        integer(int64) :: vector_start
+        integer(int64) :: dimension_index
+        integer(int64) :: vector_element
+        real(real32) :: value
+        real(real32) :: squared_norm
+
+        ! CUDA thread assignment
+        vector_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
+        if (vector_index > vector_count) then
+            return
+        end if
+        
+        ! Find the assigned vector
+        vector_start = (vector_index - 1_int64) * dimension
+
+        ! calculate the squared norm
+        squared_norm = 0.0_real32
+        do dimension_index = 1_int64, dimension
+            vector_element = vector_start + dimension_index
+            value = vectors(vector_element)
+            squared_norm = squared_norm + value * value
+        end do
+        squared_norms(vector_index) = squared_norm
+    end subroutine squared_norms_kernel
+    
+    ! Convert inner products and squared norms into squared L2 distances.
+    ! inner_products and distances are logically shaped as: (database_vector_count, query_count)
+    ! One CUDA thread processes one query-database pair.
+    attributes(global) subroutine l2_from_inner_products_kernel( &
+        inner_products, &
+        database_squared_norms, &
+        query_squared_norms, &
+        database_vector_count, &
+        query_count, &
+        distances &
+    )
+        real(real32), device, intent(in) :: inner_products(*)
+        real(real32), device, intent(in) :: database_squared_norms(*)
+        real(real32), device, intent(in) :: query_squared_norms(*)
+        integer(int64), value, intent(in) :: database_vector_count
+        integer(int64), value, intent(in) :: query_count
+        real(real32), device, intent(out) :: distances(*)
+
+        integer(int64) :: pair_count
+        integer(int64) :: pair_index
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_index
+        real(real32) :: distance
+
+        ! map one cuda thread to one pair
+        pair_count = database_vector_count * query_count
+        pair_index = int((blockIdx%x - 1) * blockDim%x + threadIdx%x, kind=int64)
+        if (pair_index > pair_count) then
+            return
+        end if
+
+        ! Recover query and database indexes
+        query_vector_index = (pair_index - 1_int64) / database_vector_count + 1_int64
+        database_vector_index = modulo(pair_index - 1_int64, database_vector_count) + 1_int64
+
+        ! apply norm expansion
+        distance = database_squared_norms(database_vector_index) &
+            + query_squared_norms(query_vector_index) - 2.0_real32 * inner_products(pair_index)
+        ! Protect against tiny negative values from rounding.
+        distances(pair_index) = max(distance, 0.0_real32)
+    end subroutine l2_from_inner_products_kernel
+
+    ! Score one query vector against the complete database
+    ! using GPU-native squared-L2 norm expansion.
+    ! ||q - x||^2 = ||q||^2 + ||x||^2 - 2(q^T x)
+    subroutine l2_database_cublas( &
+        query_vector, &
+        database_vectors, &
+        distances &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: distances(size(database_vectors, dim=2))
+
+        ! Corresponding Input arrays stored in GPU memory.
+        real(real32), allocatable, device :: d_query_vector(:)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        ! Intermediate GPU results. -> since we are expanding the euclidean distance formulae ->
+        ! (x-y)^2 = x^2 + y^2 - 2xy -> we need to store the squared_norms and inner_products
+        real(real32), allocatable, device :: d_inner_products(:)
+        real(real32), allocatable, device :: d_query_squared_norms(:)
+        real(real32), allocatable, device :: d_database_squared_norms(:)
+        ! Final squared-L2 distances in GPU memory.
+        real(real32), allocatable, device :: d_distances(:)
+
+        ! cuBLAS owns internal state through this handle.
+        type(cublasHandle) :: handle
+        real(real32) :: alpha
+        real(real32) :: beta
+        integer(int64) :: dimension
+        integer(int64) :: database_vector_count
+        integer :: database_norm_grid_size
+        integer :: distance_grid_size
+        integer :: cublas_status
+        integer :: cuda_status
+
+        dimension = size(query_vector, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+        ! validate
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        if (database_vector_count < 1_int64) then
+            error stop "Database must contain at least one vector."
+        end if
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop &
+                "Query and database vectors must have equal dimensions."
+        end if
+
+        ! Allocate input, intermediate, and output GPU memory.
+        allocate( &
+            d_query_vector(dimension), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_inner_products(database_vector_count), &
+            d_query_squared_norms(1), &
+            d_database_squared_norms(database_vector_count), &
+            d_distances(database_vector_count) &
+        )
+
+        ! Copy the query and database from CPU memory to GPU memory.
+        d_query_vector = query_vector
+        d_database_vectors = database_vectors
+
+        ! Calculate the number of blocks required for the database squared-norm kernel.
+        database_norm_grid_size = int((database_vector_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        ! Mathematical term:
+        ! ||q||^2
+        ! There is one query, so only one useful GPU thread is required. One complete block is launched for simplicity.
+        call squared_norms_kernel<<<1, cuda_block_size>>>( &
+            d_query_vector, &
+            dimension, &
+            1_int64, &
+            d_query_squared_norms &
+        )
+        
+        cuda_status = cudaGetLastError()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "Query norm kernel launch failed with status ", cuda_status
+            error stop "query squared-norm kernel launch failed"
+        end if
+
+        ! Mathematical terms:
+        ! ||x_1||^2, ||x_2||^2, ..., ||x_N||^2
+        ! One GPU thread calculates the squared norm of one database vector.
+        call squared_norms_kernel<<<database_norm_grid_size, cuda_block_size>>>( &
+            d_database_vectors, &
+            dimension, &
+            database_vector_count, &
+            d_database_squared_norms &
+        )
+
+        cuda_status = cudaGetLastError()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "Database norm kernel launch failed with status ", cuda_status
+            error stop "database squared-norm kernel launch failed"
+        end if
+
+        ! Create the cuBLAS execution context.
+        cublas_status = cublasCreate(handle)
+        if (cublas_status /=CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle creation failed with status ", cublas_status
+            error stop "cublasCreate failed"
+        end if
+
+        alpha = 1.0_real32
+        beta = 0.0_real32
+        ! Mathematical term:
+        ! q^T x
+        ! More precisely, SGEMV calculates all database-query inner products simultaneously:
+        ! inner_products = transpose(database_vectors) * query_vector
+        cublas_status = cublasSgemv_v2( &
+            handle, &
+            CUBLAS_OP_T, &
+            int(dimension), &
+            int(database_vector_count), &
+            alpha, &
+            d_database_vectors, &
+            int(dimension), &
+            d_query_vector, &
+            1, &
+            beta, &
+            d_inner_products, &
+            1 &
+        )
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS SGEMV failed with status ", cublas_status
+            error stop "cublasSgemv_v2 failed"
+        end if
+
+        distance_grid_size = int((database_vector_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        ! Assemble the full squared-L2 formula:
+        ! ||q - x||^2 = ||q||^2 + ||x||^2 - 2(q^T x)
+        ! The logical result shape is: (database_vector_count, 1)
+        call l2_from_inner_products_kernel<<<distance_grid_size, cuda_block_size>>>( &
+            d_inner_products, &
+            d_database_squared_norms, &
+            d_query_squared_norms, &
+            database_vector_count, &
+            1_int64, &
+            d_distances &
+        )
+        cuda_status = cudaGetLastError()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "L2 combination kernel launch failed with status ", cuda_status
+            error stop "l2_from_inner_products_kernel launch failed"
+        end if
+
+        ! Wait for the norm kernels, SGEMV, and L2 combination kernel to complete.
+        cuda_status = cudaDeviceSynchronize()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "cuBLAS L2 execution failed with CUDA status ", cuda_status
+            error stop "cuBLAS L2 execution failed"
+        end if
+
+        ! Copy only the completed squared-L2 distances back to host memory. 
+        ! Intermediate norms and dot products remain entirely on the GPU.
+        distances = d_distances
+
+        cublas_status = cublasDestroy(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle destruction failed with status ", cublas_status
+            error stop "cublasDestroy failed"
+        end if
+
+        deallocate( &
+            d_query_vector, &
+            d_database_vectors, &
+            d_inner_products, &
+            d_query_squared_norms, &
+            d_database_squared_norms, &
+            d_distances &
+        )
+    end subroutine l2_database_cublas
+
+    ! Score one query vector against the complete database using cuBLAS SGEMV.
+    ! similarities = transpose(database_vectors) * query_vector
+    subroutine ip_database_cublas( &
+        query_vector, &
+        database_vectors, &
+        similarities &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: similarities(size(database_vectors, dim=2))
+
+        ! Corresponding arrays stored in GPU device memory.
+        real(real32), allocatable, device :: d_query_vector(:)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        real(real32), allocatable, device :: d_similarities(:)
+
+        ! cuBLAS owns internal state through this handle.
+        type(cublasHandle) :: handle
+        real(real32) :: alpha
+        real(real32) :: beta
+        integer(int64) :: dimension
+        integer(int64) :: database_vector_count
+        integer :: cublas_status
+        integer :: cuda_status
+
+        dimension = size(query_vector, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+        ! validate
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        if (database_vector_count < 1_int64) then
+            error stop "Database must contain at least one vector."
+        end if
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop &
+                "Query and database vectors must have equal dimensions."
+        end if
+
+        ! Allocate GPU memory.
+        allocate( &
+            d_query_vector(dimension), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_similarities(database_vector_count) &
+        )
+        ! Copy host inputs to GPU memory.
+        d_query_vector = query_vector
+        d_database_vectors = database_vectors
+
+        ! Create the cuBLAS execution context.
+        cublas_status = cublasCreate(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle creation failed with status ", cublas_status
+            error stop "cublasCreate failed"
+        end if
+
+        alpha = 1.0_real32
+        beta = 0.0_real32
+        ! Calculate:
+        ! similarities =
+        !     transpose(database_vectors) * query_vector
+        ! database_vectors:
+        !     (dimension, database_vector_count)
+        ! transpose(database_vectors):
+        !     (database_vector_count, dimension)
+        ! query_vector:
+        !     (dimension)
+        ! similarities:
+        !     (database_vector_count)
+        cublas_status = cublasSgemv_v2( &
+            handle, &
+            CUBLAS_OP_T, &
+            int(dimension), &
+            int(database_vector_count), &
+            alpha, &
+            d_database_vectors, &
+            int(dimension), &
+            d_query_vector, &
+            1, &
+            beta, &
+            d_similarities, &
+            1 &
+        )
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS SGEMV failed with status ", cublas_status
+            error stop "cublasSgemv_v2 failed"
+        end if
+        ! Wait for cuBLAS GPU execution to finish and detect
+        ! asynchronous CUDA execution errors.
+        cuda_status = cudaDeviceSynchronize()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "cuBLAS SGEMV execution failed with CUDA status ", cuda_status
+            error stop "cuBLAS SGEMV execution failed"
+        end if
+
+        ! Copy the complete similarity array back to the host.
+        similarities = d_similarities
+
+        ! Release the cuBLAS context.
+        cublas_status = cublasDestroy(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle destruction failed with status ", cublas_status
+            error stop "cublasDestroy failed"
+        end if
+
+        ! Release temporary GPU allocations.
+        deallocate( &
+            d_query_vector, &
+            d_database_vectors, &
+            d_similarities &
+        )
+    end subroutine ip_database_cublas
+
+    ! Exact L2 search using cuBLAS SGEMV scoring
+    ! followed by deterministic CPU top-k selection.
+    subroutine l2_search_cublas( &
+        query_vector, &
+        database_vectors, &
+        k, &
+        topk_distances, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_distances(k)
+        integer(int64), intent(out) :: topk_indices(k)
+
+        real(real32), allocatable :: distances(:)
+        integer(int64) :: database_vector_count
+
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(distances(database_vector_count))
+
+        ! Run cuBLAS SGEMV scoring.
+        call l2_database_cublas( &
+            query_vector, &
+            database_vectors, &
+            distances &
+        )
+        ! Select the smallest l2 distance scores on the CPU.
+        call topk_smallest( &
+            distances, &
+            k, &
+            topk_distances, &
+            topk_indices &
+        )
+
+        deallocate(distances)
+    end subroutine l2_search_cublas
+
+    ! Exact inner-product search using cuBLAS SGEMV scoring
+    ! followed by deterministic CPU top-k selection.
+    subroutine ip_search_cublas( &
+        query_vector, &
+        database_vectors, &
+        k, &
+        topk_similarities, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vector(:)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_similarities(k)
+        integer(int64), intent(out) :: topk_indices(k)
+
+        real(real32), allocatable :: similarities(:)
+        integer(int64) :: database_vector_count
+
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(similarities(database_vector_count))
+
+        ! Run cuBLAS SGEMV scoring.
+        call ip_database_cublas( &
+            query_vector, &
+            database_vectors, &
+            similarities &
+        )
+        ! Select the largest inner-product scores on the CPU.
+        call topk_largest( &
+            similarities, &
+            k, &
+            topk_similarities, &
+            topk_indices &
+        )
+
+        deallocate(similarities)
+    end subroutine ip_search_cublas
+
+    ! Score every query vector against every database vector
+    ! using GPU-native squared-L2 norm expansion.
+    ! ||q - x||^2 = ||q||^2 + ||x||^2 - 2(q^T x)
+    subroutine l2_database_batch_cublas( &
+        query_vectors, &
+        database_vectors, &
+        distances &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: distances(size(database_vectors, dim=2), size(query_vectors, dim=2))
+        ! Input matrices stored in GPU memory.
+        real(real32), allocatable, device :: d_query_vectors(:, :)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        ! Intermediate GPU results for squared-L2 norm expansion:
+        ! ||x - q||^2 = ||x||^2 + ||q||^2 - 2(x^T q)
+        real(real32), allocatable, device :: d_inner_products(:, :)
+        real(real32), allocatable, device :: d_query_squared_norms(:)
+        real(real32), allocatable, device :: d_database_squared_norms(:)
+        ! Final squared-L2 distance matrix in GPU memory.
+        real(real32), allocatable, device :: d_distances(:, :)
+
+        type(cublasHandle) :: handle
+        real(real32) :: alpha
+        real(real32) :: beta
+        integer(int64) :: dimension
+        integer(int64) :: query_count
+        integer(int64) :: database_vector_count
+        integer(int64) :: pair_count
+        integer :: query_norm_grid_size
+        integer :: database_norm_grid_size
+        integer :: distance_grid_size
+        integer :: cublas_status
+        integer :: cuda_status
+
+        dimension = size(query_vectors, dim=1, kind=int64)
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate matrix dimensions.
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        if (query_count < 1_int64) then
+            error stop "Query batch must contain at least one vector."
+        end if
+        if (database_vector_count < 1_int64) then
+            error stop  "Database must contain at least one vector."
+        end if
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop "Queries and database vectors must have equal dimensions."
+        end if
+
+        pair_count = query_count * database_vector_count
+
+        ! Allocate input, intermediate, and output GPU memory.
+        allocate( &
+            d_query_vectors(dimension, query_count), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_inner_products(database_vector_count, query_count), &
+            d_query_squared_norms(query_count), &
+            d_database_squared_norms(database_vector_count), &
+            d_distances(database_vector_count, query_count) &
+        )
+        ! Copy input matrices from CPU memory to GPU memory.
+        d_query_vectors = query_vectors
+        d_database_vectors = database_vectors
+
+        query_norm_grid_size = int((query_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        database_norm_grid_size = int((database_vector_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        distance_grid_size = int((pair_count + int(cuda_block_size - 1, kind=int64)) &
+            / int(cuda_block_size, kind=int64))
+        
+        ! Mathematical terms:
+        ! ||q_1||^2, ||q_2||^2, ..., ||q_Q||^2
+        ! One CUDA thread calculates the squared norm of one query vector.
+        call squared_norms_kernel<<<query_norm_grid_size, cuda_block_size>>>( &
+            d_query_vectors, &
+            dimension, &
+            query_count, &
+            d_query_squared_norms &
+        )
+        cuda_status = cudaGetLastError()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "Query norm kernel launch failed with status ", cuda_status
+            error stop "query squared-norm kernel launch failed"
+        end if
+        ! Mathematical terms:
+        ! ||x_1||^2, ||x_2||^2, ..., ||x_N||^2
+        ! One CUDA thread calculates the squared norm of one database vector.
+        call squared_norms_kernel<<<database_norm_grid_size, cuda_block_size>>>( &
+            d_database_vectors, &
+            dimension, &
+            database_vector_count, &
+            d_database_squared_norms &
+        )
+        cuda_status = cudaGetLastError()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "Database norm kernel launch failed with status ", cuda_status
+            error stop "database squared-norm kernel launch failed"
+        end if
+
+        ! Create the cuBLAS execution context.
+        cublas_status = cublasCreate(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle creation failed with status ", cublas_status
+            error stop "cublasCreate failed"
+        end if
+
+        alpha = 1.0_real32
+        beta = 0.0_real32
+        ! Mathematical terms:
+        ! x_i^T q_j
+        ! SGEMM calculates the complete inner-product matrix:
+        ! inner_products = transpose(database_vectors) * query_vectors
+        ! Shapes:
+        ! transpose(database_vectors): (database_vector_count, dimension)
+        ! query_vectors: (dimension, query_count)
+        ! inner_products: (database_vector_count, query_count)
+        cublas_status = cublasSgemm_v2( &
+            handle, &
+            CUBLAS_OP_T, &
+            CUBLAS_OP_N, &
+            int(database_vector_count), &
+            int(query_count), &
+            int(dimension), &
+            alpha, &
+            d_database_vectors, &
+            int(dimension), &
+            d_query_vectors, &
+            int(dimension), &
+            beta, &
+            d_inner_products, &
+            int(database_vector_count) &
+        )
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS SGEMM failed with status ", cublas_status
+            error stop "cublasSgemm_v2 failed"
+        end if
+
+        ! Assemble the complete squared-L2 formula for every query-database pair:
+        ! ||q_j - x_i||^2 = ||q_j||^2 + ||x_i||^2 - 2(x_i^T q_j)
+        call l2_from_inner_products_kernel<<<distance_grid_size, cuda_block_size>>>( &
+            d_inner_products, &
+            d_database_squared_norms, &
+            d_query_squared_norms, &
+            database_vector_count, &
+            query_count, &
+            d_distances &
+        )
+        cuda_status = cudaGetLastError()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "Batched L2 combination kernel launch failed with status ", cuda_status
+            error stop "l2_from_inner_products_kernel launch failed"
+        end if
+
+        ! Wait for the norm kernels, SGEMM, and L2 combination kernel to finish.
+        cuda_status = cudaDeviceSynchronize()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "Batched cuBLAS L2 execution failed with CUDA status ", cuda_status
+            error stop "batched cuBLAS L2 execution failed"
+        end if
+
+        ! Copy only the completed squared-L2 distance matrix back to host memory.
+        distances = d_distances
+
+        ! Release the cuBLAS execution context.
+        cublas_status = cublasDestroy(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle destruction failed with status ", cublas_status
+            error stop "cublasDestroy failed"
+        end if
+
+        deallocate( &
+            d_query_vectors, &
+            d_database_vectors, &
+            d_inner_products, &
+            d_query_squared_norms, &
+            d_database_squared_norms, &
+            d_distances &
+        )
+    end subroutine l2_database_batch_cublas
+
+    ! Score every query vector against every database vector using cuBLAS SGEMM.
+    ! similarities = transpose(database_vectors) * query_vectors
+    subroutine ip_database_batch_cublas( &
+        query_vectors, &
+        database_vectors, &
+        similarities &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        real(real32), intent(out) :: similarities(size(database_vectors, dim=2), size(query_vectors, dim=2))
+
+        ! Input matrices stored in GPU memory.
+        real(real32), allocatable, device :: d_query_vectors(:, :)
+        real(real32), allocatable, device :: d_database_vectors(:, :)
+        real(real32), allocatable, device :: d_similarities(:, :)
+
+        type(cublasHandle) :: handle
+        real(real32) :: alpha
+        real(real32) :: beta
+        integer(int64) :: dimension
+        integer(int64) :: query_count
+        integer(int64) :: database_vector_count
+        integer :: cublas_status
+        integer :: cuda_status
+
+        dimension = size(query_vectors, dim=1, kind=int64)
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate matrix shapes.
+        if (dimension < 1_int64) then
+            error stop "Vector dimension must be at least 1."
+        end if
+        if (query_count < 1_int64) then
+            error stop "Query batch must contain at least one vector."
+        end if
+        if (database_vector_count < 1_int64) then
+            error stop "Database must contain atleast one vector."
+        end if
+        if (size(database_vectors, dim=1, kind=int64) /= dimension) then
+            error stop "Queries and database vectors must have equal dimensions."
+        end if
+
+        ! Allocate input and output matrices in GPU memory.
+        allocate( &
+            d_query_vectors(dimension, query_count), &
+            d_database_vectors(dimension, database_vector_count), &
+            d_similarities(database_vector_count, query_count) &
+        )
+
+        ! Copy host matrices to GPU memory.
+        d_query_vectors = query_vectors
+        d_database_vectors = database_vectors
+
+        ! create cuBLAS execution context.
+        cublas_status = cublasCreate(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle creation failed with status ", cublas_status
+            error stop "cublasCreate failed"
+        end if
+
+        alpha = 1.0_real32
+        beta = 0.0_real32
+
+        ! Calculate the complete inner-product matrix:
+        ! similarities = transpose(database_vectors) * query_vectors
+        ! Shapes:
+        ! transpose(database_vectors): (database_vector_count, dimension)
+        ! query_vectors: (dimension, query_count)
+        ! similarities: (database_vector_count, query_count)
+        cublas_status = cublasSgemm_v2( &
+            handle, &
+            CUBLAS_OP_T, &
+            CUBLAS_OP_N, &
+            int(database_vector_count), &
+            int(query_count), &
+            int(dimension), &
+            alpha, &
+            d_database_vectors, &
+            int(dimension), &
+            d_query_vectors, &
+            int(dimension), &
+            beta, &
+            d_similarities, &
+            int(database_vector_count) &
+        )
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS SGEMM failed with status ", cublas_status
+            error stop "cublasSgemm_v2 failed"
+        end if
+
+        ! Wait for SGEMM to complete and detect asynchronous
+        ! CUDA execution errors.
+        cuda_status = cudaDeviceSynchronize()
+        if (cuda_status /= cudaSuccess) then
+            write(error_unit, '(a, i0)') "cuBLAS SGEMM execution failed with CUDA status ", cuda_status
+            error stop "cuBLAS SGEMM execution failed"
+        end if
+
+        ! Copy the complete similarity matrix to host memory.
+        similarities = d_similarities
+        ! Release the cuBLAS execution context.
+        cublas_status = cublasDestroy(handle)
+        if (cublas_status /= CUBLAS_STATUS_SUCCESS) then
+            write(error_unit, '(a, i0)') "cuBLAS handle destruction failed with status ", cublas_status
+            error stop "cublasDestroy failed"
+        end if
+
+        deallocate( &
+            d_query_vectors, &
+            d_database_vectors, &
+            d_similarities &
+        )
+    end subroutine ip_database_batch_cublas
+
+    ! Exact batched l2 distance search using cuBLAS SGEMM
+    ! followed by deterministic CPU top-k selection per query.
+    subroutine l2_search_batch_cublas( &
+        query_vectors, &
+        database_vectors, &
+        k, &
+        topk_distances, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_distances(k, size(query_vectors, dim=2))
+        integer(int64), intent(out) :: topk_indices(k, size(query_vectors, dim=2))
+
+        real(real32), allocatable :: distances(:, :)
+        integer(int64) :: query_count
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_count
+
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate
+         if (query_count < 1_int64) then
+            error stop "Query batch must contain at least one vector."
+        end if
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(distances(database_vector_count, query_count))
+
+        ! run cuBLAS SGEMM scoring
+        call l2_database_batch_cublas( &
+            query_vectors, &
+            database_vectors, &
+            distances &
+        )
+
+        ! Select the smallest l2 distance values independently for each query on cpu.
+        do query_vector_index = 1_int64, query_count
+            call topk_smallest( &
+                distances(:, query_vector_index), &
+                k, &
+                topk_distances(:, query_vector_index), &
+                topk_indices(:, query_vector_index) &
+            )
+        end do
+
+        deallocate(distances)
+    end subroutine l2_search_batch_cublas
+
+    ! Exact batched inner-product search using cuBLAS SGEMM
+    ! followed by deterministic CPU top-k selection per query.
+    subroutine ip_search_batch_cublas( &
+        query_vectors, &
+        database_vectors, &
+        k, &
+        topk_similarities, &
+        topk_indices &
+    )
+        real(real32), intent(in) :: query_vectors(:, :)
+        real(real32), intent(in) :: database_vectors(:, :)
+        integer, intent(in) :: k
+        real(real32), intent(out) :: topk_similarities(k, size(query_vectors, dim=2))
+        integer(int64), intent(out) :: topk_indices(k, size(query_vectors, dim=2))
+
+        real(real32), allocatable :: similarities(:, :)
+        integer(int64) :: query_count
+        integer(int64) :: query_vector_index
+        integer(int64) :: database_vector_count
+
+        query_count = size(query_vectors, dim=2, kind=int64)
+        database_vector_count = size(database_vectors, dim=2, kind=int64)
+
+        ! validate
+         if (query_count < 1_int64) then
+            error stop "Query batch must contain at least one vector."
+        end if
+        if (k < 1) then
+            error stop "k must be at least 1."
+        end if
+        if (int(k, kind=int64) > database_vector_count) then
+            error stop "k cannot exceed the database size."
+        end if
+
+        allocate(similarities(database_vector_count, query_count))
+
+        ! run cuBLAS SGEMM scoring
+        call ip_database_batch_cublas( &
+            query_vectors, &
+            database_vectors, &
+            similarities &
+        )
+
+        ! Select the largest inner-product values independently for each query on cpu.
+        do query_vector_index = 1_int64, query_count
+            call topk_largest( &
+                similarities(:, query_vector_index), &
+                k, &
+                topk_similarities(:, query_vector_index), &
+                topk_indices(:, query_vector_index) &
+            )
+        end do
+
+        deallocate(similarities)
+    end subroutine ip_search_batch_cublas
+
+end module fnlp_vector_search_cublas
