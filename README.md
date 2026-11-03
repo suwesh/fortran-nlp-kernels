@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%E2%80%933.13-blue.svg)](https://www.python.org/)
 [![Fortran](https://img.shields.io/badge/Fortran-2018-purple.svg)](https://fortran-lang.org/)
-[![cudaFortran](https://img.shields.io/badge/CUDA-76B900?logo=nvidia&logoColor=white)](https://docs.nvidia.com/hpc-sdk/compilers/cuda-fortran-prog-guide/)
+[![CUDA Fortran](https://img.shields.io/badge/CUDA%20Fortran-76B900?logo=nvidia&logoColor=white)](https://docs.nvidia.com/hpc-sdk/compilers/cuda-fortran-prog-guide/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20x86--64-lightgrey.svg)](#platform-support)
 [![License](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.1-green.svg)](#release-status)
