@@ -2,7 +2,7 @@
 
 ## Status
 
-**90% complete**
+**95% complete**
 
 Target release: `0.1.1`
 
@@ -86,10 +86,16 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - 116 tests passed
 - [x] Run the complete regression suite
   - 428 tests passed
+- [x] Verify CUDA-enabled and CPU-only builds
+  - clean CUDA-enabled editable build
+  - 223 CUDA-focused tests passed
+  - 428 complete regression tests passed
+  - clean CPU-only editable build
+  - `_cuda` correctly absent from CPU-only installation
+  - 205 CPU-only tests passed
 
 ## Remaining
 
-- [ ] Verify CUDA-enabled and CPU-only builds
 - [ ] Add README usage notes
 - [ ] Final CUDA vector-search cleanup and commit
 
