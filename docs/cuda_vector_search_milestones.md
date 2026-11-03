@@ -2,7 +2,7 @@
 
 ## Status
 
-**80% complete**
+**90% complete**
 
 Target release: `0.1.1`
 
@@ -75,15 +75,21 @@ Current scope: explicit CUDA backends with handwritten CUDA Fortran and cuBLAS s
   - 84 tests passed
 - [x] Add vector CUDA sources and cuBLAS to the optional Meson build
 - [x] Verify CUDA-enabled editable build
+- [x] Add explicit public vector backends
+  - `cuda_fortran`
+  - `cuda_cublas`
+- [x] Add public CUDA vector-index tests
+  - `FlatIndexL2`
+  - `FlatIndexIP`
+  - `FlatIndexCosine`
+  - single-query and batched search
+  - 116 tests passed
+- [x] Run the complete regression suite
+  - 428 tests passed
 
 ## Remaining
 
-- [ ] Add explicit public vector backends
-  - `cuda_fortran`
-  - `cuda_cublas`
-- [ ] Add public CUDA vector-index tests
 - [ ] Verify CUDA-enabled and CPU-only builds
-- [ ] Run the complete regression suite
 - [ ] Add README usage notes
 - [ ] Final CUDA vector-search cleanup and commit
 

@@ -150,7 +150,7 @@ class JaccardIndex:
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Execute one candidate using the CUDA Fortran backend."""
         cuda = _require_cuda_extension()
-        return _cuda.jaccard_corpus_cuda(
+        return cuda.jaccard_corpus_cuda(
             candidate_shingles,
             self._corpus_shingles,
             self._document_offsets,
@@ -163,7 +163,7 @@ class JaccardIndex:
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Execute packed candidates using the CUDA Fortran backend."""
         cuda = _require_cuda_extension()
-        return _cuda.jaccard_batch_corpus_cuda(
+        return cuda.jaccard_batch_corpus_cuda(
             candidate_shingles,
             candidate_offsets,
             self._corpus_shingles,
