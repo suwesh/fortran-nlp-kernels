@@ -1,0 +1,20 @@
+option(
+  'fnlp_cuda',
+  type: 'boolean',
+  value: false,
+  description: 'Build the optional CUDA Fortran extension',
+)
+
+option(
+  'fnlp_cuda_arch',
+  type: 'string',
+  value: 'cc86',
+  description: 'CUDA compute capability passed to nvfortran',
+)
+
+option(
+  'fnlp_cuda_toolkit',
+  type: 'string',
+  value: 'cuda13.3',
+  description: 'CUDA toolkit version passed to nvfortran',
+)

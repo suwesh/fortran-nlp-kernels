@@ -1,0 +1,213 @@
+Using pip 24.0 from /home/suwesh/env3.12/lib/python3.12/site-packages/pip (python 3.12)
+Non-user install because user site-packages disabled
+Created temporary directory: /tmp/pip-build-tracker-6hpm19qd
+Initialized build tracking at /tmp/pip-build-tracker-6hpm19qd
+Created build tracker: /tmp/pip-build-tracker-6hpm19qd
+Entered build tracker: /tmp/pip-build-tracker-6hpm19qd
+Created temporary directory: /tmp/pip-install-sp_g20e9
+Created temporary directory: /tmp/pip-ephem-wheel-cache-6oqfihzi
+Obtaining file:///home/suwesh/Projects/fortran-nlp-kernels
+  Added file:///home/suwesh/Projects/fortran-nlp-kernels to build tracker '/tmp/pip-build-tracker-6hpm19qd'
+  Created temporary directory: /tmp/pip-build-env-hy_73nzq
+  Installing build dependencies: started
+  Running command pip subprocess to install build dependencies
+  Using pip 24.0 from /home/suwesh/env3.12/lib/python3.12/site-packages/pip (python 3.12)
+  Collecting meson-python>=0.18
+    Obtaining dependency information for meson-python>=0.18 from https://files.pythonhosted.org/packages/96/62/0c1cf20fe158b0e623e78acbf5fb6de5f1410a408f65f727e4090497627b/meson_python-0.22.1-py3-none-any.whl.metadata
+    Using cached meson_python-0.22.1-py3-none-any.whl.metadata (2.1 kB)
+  Collecting nanobind>=3.1
+    Obtaining dependency information for nanobind>=3.1 from https://files.pythonhosted.org/packages/36/c1/6fd56f7a02a478d54a1a3e6000eccd34b446b1c45cbf0d002fe5d2937126/nanobind-3.1.0-py3-none-any.whl.metadata
+    Using cached nanobind-3.1.0-py3-none-any.whl.metadata (1.8 kB)
+    Link requires a different Python (3.12.3 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/3a/be/650f9c091ef71cb01d735775d554e068752d3ff63d7943b26316dc401749/numpy-1.21.2.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+    Link requires a different Python (3.12.3 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/5f/d6/ad58ded26556eaeaa8c971e08b6466f17c4ac4d786cd3d800e26ce59cc01/numpy-1.21.3.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+    Link requires a different Python (3.12.3 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+    Link requires a different Python (3.12.3 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/c2/a8/a924a09492bdfee8c2ec3094d0a13f2799800b4fdc9c890738aeeb12c72e/numpy-1.21.5.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+    Link requires a different Python (3.12.3 not in: '>=3.7,<3.11'): https://files.pythonhosted.org/packages/45/b7/de7b8e67f2232c26af57c205aaad29fe17754f793404f59c8a730c7a191a/numpy-1.21.6.zip (from https://pypi.org/simple/numpy/) (requires-python:>=3.7,<3.11)
+  Collecting numpy>=2.0
+    Obtaining dependency information for numpy>=2.0 from https://files.pythonhosted.org/packages/43/a3/c799c62e19c337e6d3770b08e475887fb30ce8477d3c09efca6b2f0228a6/numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata
+    Using cached numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (6.6 kB)
+  Collecting meson>=1.2.3 (from meson-python>=0.18)
+    Obtaining dependency information for meson>=1.2.3 from https://files.pythonhosted.org/packages/57/99/36cd25f9598eef70db97577440a70a360af505f6f01c2338a18d1556079c/meson-1.12.1-py3-none-any.whl.metadata
+    Using cached meson-1.12.1-py3-none-any.whl.metadata (1.7 kB)
+  Collecting packaging>=23.2 (from meson-python>=0.18)
+    Obtaining dependency information for packaging>=23.2 from https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl.metadata
+    Using cached packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+  Collecting pyproject-metadata>=0.9.0 (from meson-python>=0.18)
+    Obtaining dependency information for pyproject-metadata>=0.9.0 from https://files.pythonhosted.org/packages/b9/8e/d883718e872abc214ba053f60f7e6edc2abd5ffbd1544beb01a9c92ddd3c/pyproject_metadata-0.12.1-py3-none-any.whl.metadata
+    Using cached pyproject_metadata-0.12.1-py3-none-any.whl.metadata (6.5 kB)
+  Using cached meson_python-0.22.1-py3-none-any.whl (31 kB)
+  Using cached nanobind-3.1.0-py3-none-any.whl (316 kB)
+  Using cached numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (16.7 MB)
+  Using cached meson-1.12.1-py3-none-any.whl (1.1 MB)
+  Using cached packaging-26.3-py3-none-any.whl (129 kB)
+  Using cached pyproject_metadata-0.12.1-py3-none-any.whl (23 kB)
+  Installing collected packages: packaging, numpy, nanobind, meson, pyproject-metadata, meson-python
+    Creating /tmp/pip-build-env-hy_73nzq/overlay/bin
+    changing mode of /tmp/pip-build-env-hy_73nzq/overlay/bin/f2py to 755
+    changing mode of /tmp/pip-build-env-hy_73nzq/overlay/bin/numpy-config to 755
+    changing mode of /tmp/pip-build-env-hy_73nzq/overlay/bin/meson to 755
+  ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+  humming-kernels 0.1.6 requires tabulate, which is not installed.
+  flashinfer-python 0.6.12 requires cuda-tile[tileiras], which is not installed.
+  flashinfer-python 0.6.12 requires tabulate, which is not installed.
+  tilelang 0.1.9 requires ml-dtypes, which is not installed.
+  tilelang 0.1.9 requires torch-c-dlpack-ext; python_version < "3.14", which is not installed.
+  tilelang 0.1.9 requires z3-solver<4.15.5,>=4.13.0, which is not installed.
+  numba 0.65.0 requires llvmlite<0.48,>=0.47.0dev0, but you have llvmlite 0.44.0 which is incompatible.
+  numba 0.65.0 requires numpy<2.5,>=1.22, but you have numpy 2.5.4 which is incompatible.
+  paddlex 3.5.1 requires numpy<2.4,>=1.24, but you have numpy 2.5.4 which is incompatible.
+  mistral-common 1.11.5 requires numpy<2.4,>=1.25; python_version <= "3.12", but you have numpy 2.5.4 which is incompatible.
+  gradio 5.47.2 requires pydantic<2.12,>=2.0, but you have pydantic 2.13.4 which is incompatible.
+  gradio 5.47.2 requires starlette<1.0,>=0.40.0, but you have starlette 1.3.1 which is incompatible.
+  tool-helpers 0.1.2 requires numpy<=1.26.4, but you have numpy 2.5.4 which is incompatible.
+  xformers 0.0.31 requires torch==2.7.1, but you have torch 2.11.0+cu130 which is incompatible.
+  datasets 3.6.0 requires fsspec[http]<=2025.3.0,>=2023.1.0, but you have fsspec 2026.4.0 which is incompatible.
+  Successfully installed meson-1.12.1 meson-python-0.22.1 nanobind-3.1.0 numpy-2.5.4 packaging-26.3 pyproject-metadata-0.12.1
+  Installing build dependencies: finished with status 'done'
+  Checking if build backend supports build_editable: started
+  Running command Checking if build backend supports build_editable
+  Checking if build backend supports build_editable: finished with status 'done'
+  Getting requirements to build editable: started
+  Running command Getting requirements to build editable
+  Getting requirements to build editable: finished with status 'done'
+  Created temporary directory: /tmp/pip-modern-metadata-qc84lgi3
+  Preparing editable metadata (pyproject.toml): started
+  Running command Preparing editable metadata (pyproject.toml)
+  + meson setup /home/suwesh/Projects/fortran-nlp-kernels /home/suwesh/Projects/fortran-nlp-kernels/build/cp312 -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md -Dfnlp_cuda=true -Dfnlp_cuda_arch=cc86 -Dfnlp_cuda_toolkit=cuda13.3 --native-file=/home/suwesh/Projects/fortran-nlp-kernels/build/cp312/meson-python-native-file.ini
+  The Meson build system
+  Version: 1.12.1
+  Source dir: /home/suwesh/Projects/fortran-nlp-kernels
+  Build dir: /home/suwesh/Projects/fortran-nlp-kernels/build/cp312
+  Build type: native build
+  Project name: fortran-nlp-kernels
+  Project version: 0.1.1dev
+  Fortran compiler for the host machine: gfortran (gcc 13.3.0 "GNU Fortran (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+  Fortran linker for the host machine: gfortran ld.bfd 2.42
+  C++ compiler for the host machine: c++ (gcc 13.3.0 "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+  C++ linker for the host machine: c++ ld.bfd 2.42
+  Host machine cpu family: x86_64
+  Host machine cpu: x86_64
+  Program python found: YES (/home/suwesh/env3.12/bin/python)
+  Did not find pkg-config by name 'pkg-config'
+  Found pkg-config: NO
+  WARNING: Found CMake '/home/suwesh/env3.12/bin/cmake' but couldn't run it
+  Found CMake: NO
+  Run-time dependency nanobind found: NO  (tried pkg-config and cmake)
+  Looking for a fallback subproject for the dependency nanobind
+
+  Executing subproject nanobind for machine: host
+
+  nanobind| Project name: nanobind
+  nanobind| Project version: 3.1.0
+  nanobind| C++ compiler for the host machine: c++ (gcc 13.3.0 "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+  nanobind| C++ linker for the host machine: c++ ld.bfd 2.42
+  nanobind| Program python found: YES (/home/suwesh/env3.12/bin/python)
+  nanobind| Did not find pkg-config by name 'pkg-config'
+  nanobind| Found pkg-config: NO
+  nanobind| Run-time dependency python found: YES 3.12
+  nanobind| Run-time dependency tsl-robin-map found: NO  (tried pkg-config and cmake)
+  nanobind| Looking for a fallback subproject for the dependency tsl-robin-map
+
+  Executing subproject nanobind:robin-map for machine: host
+
+  robin-map| Project name: robin-map
+  robin-map| Project version: 1.4.1
+  robin-map| C++ compiler for the host machine: c++ (gcc 13.3.0 "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0")
+  robin-map| C++ linker for the host machine: c++ ld.bfd 2.42
+  robin-map| Run-time dependency Boost for cpp found: NO  (tried system)
+  robin-map| Build targets in project: 0
+  robin-map| Subproject robin-map finished.
+
+  nanobind| Dependency tsl-robin-map for host machine found: YES 1.4.1 (overridden)
+  nanobind| Build targets in project: 0
+  nanobind| Subproject nanobind finished.
+
+  Dependency nanobind for host machine found: YES 3.1.0 (overridden)
+  Run-time dependency OpenMP for fortran found: YES 4.5
+  Library openblas found: YES
+  Run-time dependency python found: YES 3.12
+  Program bash found: YES (/usr/bin/bash)
+  Program /opt/nvidia/hpc_sdk/Linux_x86_64/26.9/compilers/bin/nvfortran found: YES (/opt/nvidia/hpc_sdk/Linux_x86_64/26.9/compilers/bin/nvfortran)
+  Program tools/build_cuda_extension.sh found: YES (/home/suwesh/Projects/fortran-nlp-kernels/tools/build_cuda_extension.sh)
+  Message: CUDA Fortran extension enabled: _cuda.cpython-312-x86_64-linux-gnu.so
+  Message: CUDA target: cc86, cuda13.3
+  Build targets in project: 2
+
+  fortran-nlp-kernels 0.1.1dev
+
+    Subprojects (for host machine)
+      nanobind         : YES
+      robin-map        : YES (from nanobind)
+
+    User defined options
+      Native files     : /home/suwesh/Projects/fortran-nlp-kernels/build/cp312/meson-python-native-file.ini
+      b_ndebug         : if-release
+      b_vscrt          : md
+      buildtype        : release
+      fnlp_cuda        : true
+      fnlp_cuda_arch   : cc86
+      fnlp_cuda_toolkit: cuda13.3
+
+  Found ninja-1.13.2.git.kitware.jobserver-pipe-1 at /home/suwesh/env3.12/bin/ninja
+  + /home/suwesh/env3.12/bin/ninja
+  [1/12] Scanning target _cpu.cpython-312-x86_64-linux-gnu for modules
+  [2/12] Generating dynamic dependency information for target _cpu.cpython-312-x86_64-linux-gnu
+  [3/12] Compiling Fortran object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_cpu_vector_search_topk_core.f90.o
+  [4/12] Compiling Fortran object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_cpu_lexical_lexical_core.f90.o
+  [5/12] Compiling Fortran object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_cpu_lexical_lexical_c_api.f90.o
+  [6/12] Compiling Fortran object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_cpu_vector_search_vector_search_core.f90.o
+  [7/12] Compiling Fortran object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_cpu_vector_search_vector_search_blas.f90.o
+  [8/12] Compiling Fortran object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_cpu_vector_search_vector_search_c_api.f90.o
+  [9/12] Compiling C++ object _cpu.cpython-312-x86_64-linux-gnu.so.p/src_native_bindings_cpu_bindings.cpp.o
+  [10/12] Compiling C++ object _cpu.cpython-312-x86_64-linux-gnu.so.p/subprojects_nanobind-3.1.0_src_nb_combined.cpp.o
+  In file included from ../../subprojects/nanobind-3.1.0/src/nb_combined.cpp:91:
+  ../../subprojects/nanobind-3.1.0/src/trampoline.cpp: In function ‘std::atomic<long unsigned int>& nanobind::detail::alloc_word(type_data*)’:
+  ../../subprojects/nanobind-3.1.0/src/trampoline.cpp:131:13: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+    131 |     return *(std::atomic<uintptr_t> *) &td->trampoline_allocs;
+        |             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  [11/12] Linking target _cpu.cpython-312-x86_64-linux-gnu.so
+  [12/12] Generating fnlp_cuda_extension with a custom command (wrapped by meson to set env)
+  Building deterministic CPU top-k core...
+  Building CUDA Fortran lexical core...
+  Building CUDA Fortran C ABI...
+  Building handwritten CUDA Fortran vector-search core...
+  Building cuBLAS vector-search backend...
+  Building CUDA vector-search C ABI...
+  Building nanobind CUDA adapter with g++...
+  Building nanobind runtime with g++...
+  Linking Python CUDA extension...
+  Built CUDA extension:
+    /home/suwesh/Projects/fortran-nlp-kernels/build/cp312/./_cuda.cpython-312-x86_64-linux-gnu.so
+  CUDA Python extension build: PASS
+    /home/suwesh/Projects/fortran-nlp-kernels/build/cp312/./_cuda.cpython-312-x86_64-linux-gnu.so
+  Preparing editable metadata (pyproject.toml): finished with status 'done'
+  Source in /home/suwesh/Projects/fortran-nlp-kernels has version 0.1.1.dev0, which satisfies requirement fortran-nlp-kernels==0.1.1.dev0 from file:///home/suwesh/Projects/fortran-nlp-kernels
+  Removed fortran-nlp-kernels==0.1.1.dev0 from file:///home/suwesh/Projects/fortran-nlp-kernels from build tracker '/tmp/pip-build-tracker-6hpm19qd'
+Created temporary directory: /tmp/pip-unpack-79a0oz6z
+Building wheels for collected packages: fortran-nlp-kernels
+  Created temporary directory: /tmp/pip-wheel-f6vyfpgq
+  Destination directory: /tmp/pip-wheel-f6vyfpgq
+  Building editable for fortran-nlp-kernels (pyproject.toml): started
+  Running command Building editable for fortran-nlp-kernels (pyproject.toml)
+  Building editable for fortran-nlp-kernels (pyproject.toml): finished with status 'done'
+  Created wheel for fortran-nlp-kernels: filename=fortran_nlp_kernels-0.1.1.dev0-cp312-cp312-linux_x86_64.whl size=24977 sha256=2ced6273a5dcfcc2443261661842ac0f5eb49123be12fb8d74eea8abbb5ac35f
+  Stored in directory: /tmp/pip-ephem-wheel-cache-6oqfihzi/wheels/c7/ec/49/390953dda6c913920ddb51d26bdbc99da8ed9eee81979a07b0
+Successfully built fortran-nlp-kernels
+Installing collected packages: fortran-nlp-kernels
+  Attempting uninstall: fortran-nlp-kernels
+    Found existing installation: fortran-nlp-kernels 0.1.1.dev0
+    Uninstalling fortran-nlp-kernels-0.1.1.dev0:
+      Created temporary directory: /tmp/pip-uninstall-5lms24_f
+      Removing file or directory /home/suwesh/env3.12/bin/fortran-nlp-calibrate
+      Created temporary directory: /tmp/pip-uninstall-qfux9uh5
+      Removing file or directory /home/suwesh/env3.12/lib/python3.12/site-packages/__pycache__/_fortran_nlp_kernels_editable_loader.cpython-312.pyc
+      Created temporary directory: /tmp/pip-uninstall-3ucqyn29
+      Removing file or directory /home/suwesh/env3.12/lib/python3.12/site-packages/_fortran_nlp_kernels_editable_loader.py
+      Removing file or directory /home/suwesh/env3.12/lib/python3.12/site-packages/fortran-nlp-kernels-editable.pth
+      Created temporary directory: /home/suwesh/env3.12/lib/python3.12/site-packages/~ortran_nlp_kernels-0.1.1.dev0.dist-info
+      Removing file or directory /home/suwesh/env3.12/lib/python3.12/site-packages/fortran_nlp_kernels-0.1.1.dev0.dist-info/
+      Successfully uninstalled fortran-nlp-kernels-0.1.1.dev0
+
+  changing mode of /home/suwesh/env3.12/bin/fortran-nlp-calibrate to 755
+Successfully installed fortran-nlp-kernels-0.1.1.dev0
+Removed build tracker: '/tmp/pip-build-tracker-6hpm19qd'

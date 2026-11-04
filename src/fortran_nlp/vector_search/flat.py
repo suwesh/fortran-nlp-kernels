@@ -1,6 +1,12 @@
 import numpy as np
 
 from fortran_nlp import _cpu
+# optional _cuda import
+try:
+    from fortran_nlp import _cuda
+except ImportError:
+    _cuda = None
+
 from fortran_nlp.auto import (
     BackendDecision,
     VectorWorkload,
@@ -16,8 +22,16 @@ SUPPORTED_BACKENDS = {
     "fortran",
     "fortran_openmp",
     "fortran_blas",
+    "cuda_fortran",
+    "cuda_cublas",
 }
 
+def _require_cuda_extension(backend: str):
+    if _cuda is None:
+        raise RuntimeError(
+            f"backend='{backend}' requires the optional fortran_nlp._cuda extension, the NVIDIA CUDA runtime, and a compatible NVIDIA GPU"
+        )
+    return _cuda
 
 class _FlatIndexBase:
     """Shared validation, storage, and dispatch for exact flat indexes."""
@@ -137,6 +151,85 @@ class _FlatIndexBase:
             raise ValueError(
                 "k cannot exceed the database size"
             )
+
+    # generic CUDA dispatch for _FlatIndexBase
+    def _execute_cuda_single(
+        self,
+        query: np.ndarray,
+        k: int,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Execute one query through an explicit CUDA backend."""
+        cuda = _require_cuda_extension(self._backend)
+        if self._metric == "l2":
+            if self._backend == "cuda_fortran":
+                return cuda.l2_search_cuda(
+                    query,
+                    self._database,
+                    k,
+                )
+            if self._backend == "cuda_cublas":
+                return cuda.l2_search_cublas(
+                    query,
+                    self._database,
+                    k,
+                )
+        if self._metric in {"ip", "cosine"}:
+            if self._backend == "cuda_fortran":
+                return cuda.ip_search_cuda(
+                    query,
+                    self._database,
+                    k,
+                )
+            if self._backend == "cuda_cublas":
+                return cuda.ip_search_cublas(
+                    query,
+                    self._database,
+                    k,
+                )
+        raise RuntimeError(f"Unsupported CUDA vector-search combination: metric={self._metric!r}, backend={self._backend!r}")
+
+    def _execute_cuda_batch(
+        self,
+        queries: np.ndarray,
+        k: int,
+    ) -> tuple[np.ndarray, np.ndarray]: 
+        """Execute a query batch through an explicit CUDA backend."""
+        cuda = _require_cuda_extension(self._backend)
+        if self._metric == "l2":
+            if self._backend == "cuda_fortran":
+                values, indices = cuda.l2_search_batch_cuda(
+                    queries,
+                    self._database,
+                    k,
+                )
+            elif self._backend == "cuda_cublas":
+                values, indices = cuda.l2_search_batch_cublas(
+                    queries,
+                    self._database,
+                    k,
+                )
+            else:
+                raise RuntimeError(f"Unsupported CUDA L2 backend: {self._backend}")
+        elif self._metric in {"ip", "cosine"}:
+            if self._backend == "cuda_fortran":
+                values, indices = cuda.ip_search_batch_cuda(
+                    queries,
+                    self._database,
+                    k,
+                )
+            elif self._backend == "cuda_cublas":
+                values, indices = cuda.ip_search_batch_cublas(
+                    queries,
+                    self._database,
+                    k,
+                )
+            else:
+                raise RuntimeError(f"Unsupported CUDA IP backend: {self._backend}")
+        else:
+            raise RuntimeError(f"Unsupported CUDA vector search metric: {self._metric}")
+        # Native output: (k, query_count)
+        # Public Python output: (query_count, k)
+        return values.T, indices.T
 
     def _make_workload(
         self,
@@ -297,6 +390,9 @@ class FlatIndexIP(_FlatIndexBase):
         self._validate_k(k)
         query = self._prepare_query(query_vector)
 
+        if self._backend in {"cuda_fortran", "cuda_cublas",}:
+            return self._execute_cuda_single(query=query, k=k,)
+
         decision = resolve_vector_backend(
             self._backend,
             self._make_workload(
@@ -340,6 +436,9 @@ class FlatIndexIP(_FlatIndexBase):
     ) -> tuple[np.ndarray, np.ndarray]:
         self._validate_k(k)
         queries = self._prepare_query_batch(query_vectors)
+
+        if self._backend in {"cuda_fortran", "cuda_cublas",}:
+            return self._execute_cuda_batch(queries=queries, k=k,)
 
         decision = resolve_vector_backend(
             self._backend,
@@ -493,6 +592,9 @@ class FlatIndexL2(_FlatIndexBase):
         self._validate_k(k)
         query = self._prepare_query(query_vector)
 
+        if self._backend in {"cuda_fortran", "cuda_cublas",}:
+            return self._execute_cuda_single(query=query, k=k,)
+
         decision = resolve_vector_backend(
             self._backend,
             self._make_workload(
@@ -536,6 +638,9 @@ class FlatIndexL2(_FlatIndexBase):
     ) -> tuple[np.ndarray, np.ndarray]:
         self._validate_k(k)
         queries = self._prepare_query_batch(query_vectors)
+
+        if self._backend in {"cuda_fortran", "cuda_cublas",}:
+            return self._execute_cuda_batch(queries=queries, k=k,)
 
         decision = resolve_vector_backend(
             self._backend,

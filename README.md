@@ -2,168 +2,135 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%E2%80%933.13-blue.svg)](https://www.python.org/)
 [![Fortran](https://img.shields.io/badge/Fortran-2018-purple.svg)](https://fortran-lang.org/)
+[![CUDA Fortran](https://img.shields.io/badge/CUDA%20Fortran-76B900?logo=nvidia&logoColor=white)](https://docs.nvidia.com/hpc-sdk/compilers/cuda-fortran-prog-guide/)
 [![Platform](https://img.shields.io/badge/platform-Linux%20x86--64-lightgrey.svg)](#platform-support)
 [![License](https://img.shields.io/badge/license-GPL--3.0--only-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-green.svg)](#release-status)
+[![Version](https://img.shields.io/badge/version-0.1.1-green.svg)](#release-status)
 
-**Exact lexical and dense-vector similarity search for Python with Fortran backends, CPU autotuning, and workload-aware runtime dispatch.**
+**Exact lexical and dense-vector similarity search for Python with compiled Fortran, OpenMP, OpenBLAS, CUDA Fortran, and cuBLAS backends.**
 
-`fortran-nlp-kernels` provides a Python API for exact word-shingle Jaccard search and exact dense-vector search while executing the computational kernels in compiled Fortran, OpenMP, and OpenBLAS code. 
-
-The stable `0.1.0` release introduces benchmark-informed CPU autotuning and workload-aware runtime dispatch, optional machine-specific thread calibration, versioned calibration profiles, runtime memory guardrails, and temporary OpenMP/OpenBLAS thread control. The shipped fallback policy is based on CPU performance experiments conducted on the `perf-eval` branch against the `0.1.0b2` implementation.
+`fortran-nlp-kernels` provides exact word-shingle Jaccard search and exact flat vector search for inner product, squared L2 distance, and cosine similarity. It combines a Python API with native CPU and NVIDIA GPU implementations, deterministic top-k selection, and a benchmark-informed CPU-only `backend="auto"` resolver.
 
 ## Release status
 
-`0.1.0` is the first stable Linux CPU release.
+Version `0.1.1` adds explicit CUDA Fortran and cuBLAS vector-search backends for single-query and batched search. CUDA lexical Jaccard search remains available through the handwritten CUDA Fortran backend.
 
-The package is intended for exact similarity search, systems experimentation, reproducible CPU performance engineering, and integration into Python applications. Development continues beyond `0.1.0`; future releases may add improved top-k selection, machine-specific crossover calibration, additional platform support, and GPU backends.
+Version `0.1.0` introduced benchmark-informed CPU backend selection, optional machine-specific OpenMP and OpenBLAS thread calibration, versioned calibration profiles, runtime memory guardrails, and temporary thread control.
 
-## Included
-
-- Exact word-shingle Jaccard search
-- Batched lexical Jaccard search
-- Exact inner-product vector search
-- Exact squared-L2 vector search
-- Exact cosine-similarity search
-- Serial Fortran lexical and vector scoring
-- OpenMP Fortran lexical and vector scoring
-- OpenBLAS `SGEMV` single-query vector search
-- OpenBLAS `SGEMM` batched vector search
-- Workload-aware `backend="auto"` runtime dispatch
-- Packaged benchmark-informed CPU fallback policy
-- Optional machine-specific OpenMP and OpenBLAS thread calibration
-- Versioned calibration profiles with compatibility checks
-- Runtime memory guardrails for native lexical batches and vector `SGEMM`
-- Temporary thread-runtime control with guaranteed restoration
-- Exact top-k selection
-- NumPy correctness references
-- Python, native Fortran, C ABI, integration, policy, profile, calibration, and runtime tests
-- CPython 3.10–3.13 manylinux wheels
-
-## Current limitations
-
-- Linux x86-64 only
-- Result IDs are zero-based positional indexes
-- Exact top-k selection currently uses an `O(Nk)` implementation
-- Machine calibration tunes representative OpenMP and OpenBLAS thread counts; workload crossover thresholds remain supplied by the packaged benchmark policy
-- Full-SMT counts are not selected automatically by the shipped fallback policy
-- Hybrid-core-aware placement, CPU affinity management, cache topology, and NUMA-aware dispatch are not included
-- CUDA Fortran and GPU backends are not included
-
-## Architecture
-
-```text
-Python public API
-        ↓
-Runtime workload descriptor
-        ↓
-Backend resolver:-
-        +-- Level 1: explicit backend override
-        +-- Level 2: compatible machine calibration profile
-        +-- Level 3: packaged fallback policy
-        ↓
-BackendDecision
-        ↓
-OpenMP / OpenBLAS runtime controller
-        ↓
-Python validation, preprocessing, and orchestration
-        ↓
-nanobind C++ extension
-        ↓
-stable C ABI
-        ↓
-Fortran / OpenMP / OpenBLAS kernels
-```
-
-The native lexical path is separated into focused layers:
-
-```text
-lexical_core.f90     → lexical algorithms
-lexical_c_api.f90    → Fortran-to-C adapter
-.h header            → C declarations
-cpu_bindings.cpp     → C-to-Python adapter
-```
-
-The vector-search path follows the same structure:
-
-```text
-vector_search_core.f90   → handwritten IP and squared-L2 kernels
-vector_search_blas.f90   → SGEMV and SGEMM implementations
-topk_core.f90            → exact top-k selection
-vector_search_c_api.f90  → Fortran-to-C adapter
-cpu_bindings.cpp         → C-to-Python adapter
-```
-
-The automatic-dispatch layer is implemented through:
-
-```text
-auto.py                   -> workload descriptors and backend resolution
-profile.py                -> machine fingerprinting and profile compatibility
-runtime.py                -> memory discovery and temporary thread control
-calibration.py            -> bounded optional CPU thread calibration
-policies/cpu_fallback_v1.json
-                           -> packaged benchmark-informed fallback policy
-```
+The package is intended for exact similarity search, systems experimentation, reproducible performance engineering, and integration into Python applications.
 
 ## Platform support
 
+### CPU distribution
+
+- Linux x86-64
+- CPython 3.10-3.13
+- `manylinux_2_28` wheels
+- Serial Fortran, OpenMP Fortran, and OpenBLAS backends
+
+### CUDA companion distribution
+
+- Linux x86-64
+- CPython 3.12 for the initial `0.1.1` CUDA wheel
+- NVIDIA GPU with a compatible driver
+- CUDA 13.3 runtime and cuBLAS available on the host
+- Any additional NVIDIA HPC SDK runtime libraries reported by the published wheel
+- External-runtime packaging model: NVIDIA runtime libraries are not bundled into the wheel
+
+The CUDA companion is distributed separately as `fortran-nlp-kernels-cuda` and installs `_cuda` beside the base package. The base CPU package remains usable without NVIDIA software.
+
+## Features
+
+- Exact word-shingle Jaccard search, including batched search
+- Exact inner-product, squared-L2, and cosine vector search
+- Serial and OpenMP Fortran CPU kernels
+- OpenBLAS SGEMV and SGEMM vector backends
+- Handwritten CUDA Fortran lexical and vector kernels
+- cuBLAS SGEMV and SGEMM vector backends
+- Deterministic CPU top-k with stable ties and zero-based indices
+- CPU workload-aware `backend="auto"` dispatch
+- Optional machine-specific OpenMP and OpenBLAS thread calibration
+- Runtime memory guardrails and temporary thread control
+- Native Fortran, C ABI, nanobind, NumPy-reference, and public API tests
+
+## Installation: PyPI
+
+### CPU package
+
+Install the stable CPU distribution:
+
+```bash
+python -m pip install fortran-nlp-kernels==0.1.1
+```
+
+The prebuilt CPU wheels do not require a Fortran compiler or OpenBLAS development package.
+
+### CUDA companion
+
+Install the CUDA companion and its matching base package:
+
+```bash
+python -m pip install fortran-nlp-kernels-cuda==0.1.1
+```
+
+The companion declares an exact dependency on:
+
 ```text
-Operating system: Linux
-Architecture: x86-64
-Python: CPython 3.10, 3.11, 3.12, and 3.13
-Wheel policy: manylinux_2_28
+fortran-nlp-kernels==0.1.1
 ```
 
-The source package declares Python 3.10 or newer.
+The CUDA wheel uses external NVIDIA runtime libraries. Before importing `fortran_nlp._cuda`, ensure that the supported NVIDIA driver, CUDA runtime, cuBLAS, and required NVIDIA HPC SDK runtime libraries are discoverable by the Linux dynamic loader.
 
-## System prerequisites
-
-### Installing the prebuilt Linux wheel
-
-The published manylinux wheel bundles the required non-policy native libraries. A Fortran compiler and the OpenBLAS development package are not required when installing a compatible prebuilt wheel.
-
-### Building from source
-
-Install the compiler and development libraries:
+Basic diagnostics:
 
 ```bash
-sudo apt update
-sudo apt install gfortran g++ libopenblas-dev libgomp1
+nvidia-smi
 ```
 
-A source build also requires a supported Python environment and `pip`. Build-time Python dependencies are installed through `pyproject.toml`.
-
-## Installation
-
-### PyPI
-
-Install the latest available stable release:
+After installation:
 
 ```bash
-python -m pip install fortran-nlp-kernels
+python - <<'PY'
+from fortran_nlp import _cuda
+print(_cuda.__file__)
+PY
 ```
 
-To install this exact release:
+To inspect unresolved or externally loaded libraries:
 
 ```bash
-python -m pip install fortran-nlp-kernels==0.1.0
+ldd "$(python -c 'from fortran_nlp import _cuda; print(_cuda.__file__)')"
 ```
 
-### Local wheel
+The release notes for the CUDA companion specify the exact build toolchain and runtime versions. The initial `0.1.1` CUDA wheel targets CUDA 13.3 and NVIDIA HPC SDK 26.9.
 
-Download the wheel matching the installed CPython version from the GitHub release or CI artifacts, then install it by path: 
-```bash 
-python -m pip install \ 
-    ./fortran_nlp_kernels-0.1.0-cp312-cp312-manylinux_2_28_x86_64.whl
-```
-
-### Editable source installation
+### Editable CPU build
 
 ```bash
 git clone https://github.com/suwesh/fortran-nlp-kernels.git
 cd fortran-nlp-kernels
 python -m pip install -e .
 ```
+
+A CPU source build requires a supported Python environment, GFortran, a C++17 compiler, OpenMP, and OpenBLAS development files.
+
+On Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install gfortran g++ libopenblas-dev libgomp1
+```
+
+### Editable CUDA-enabled build
+
+```bash
+python -m pip install -e . \
+  --config-settings=setup-args="-Dfnlp_cuda=true" \
+  --config-settings=setup-args="-Dfnlp_cuda_arch=cc86" \
+  --config-settings=setup-args="-Dfnlp_cuda_toolkit=cuda13.3"
+```
+
+A CUDA source build additionally requires NVIDIA HPC SDK with `nvfortran`, a compatible CUDA toolkit, and an architecture value appropriate for the target GPU. The example uses `cc86`, which matches the development RTX 3060 system.
 
 ## Quick start
 
@@ -191,6 +158,19 @@ for result in results:
     print(result)
 ```
 
+`JaccardIndex.search_batch()` compares multiple candidates against the same indexed corpus:
+
+```python
+batch_results = index.search_batch(
+    [
+        "how to reset the account password",
+        "contact information update",
+    ],
+    k=2,
+    minimum_score=0.01,
+)
+```
+
 Example result:
 
 ```text
@@ -202,44 +182,7 @@ JaccardResult(
 )
 ```
 
-Text preprocessing performs Unicode normalization, case folding, fixed-size word shingling, deterministic 64-bit hashing, sorting, and deduplication before invoking the native kernel.
-
-### Batched lexical Jaccard search
-
-`JaccardIndex.search_batch()` compares multiple candidate texts against the same indexed corpus.
-
-```python
-from fortran_nlp.lexical import JaccardIndex
-
-batch_results = index.search_batch(
-    [
-        "how to reset the account password",
-        "contact information update",
-    ],
-    k=2,
-    minimum_score=0.01,
-)
-
-for candidate_index, candidate_results in enumerate(batch_results):
-    print(candidate_index, candidate_results)
-```
-
-The return type is:
-
-```python
-list[list[JaccardResult]]
-```
-
-The outer list contains one entry per candidate. Each inner list contains the ranked corpus matches for that candidate.
-
-With `backend="auto"`, batched lexical search chooses among repeated serial, repeated OpenMP, and native batched OpenMP execution according to the workload, active policy, and runtime memory budget.
-
-Explicit lexical batch execution is also supported:
-
-```text
-backend="fortran"         -> repeated serial execution
-backend="fortran_openmp"  -> repeated OpenMP execution
-```
+Text preprocessing performs Unicode normalization, case folding, fixed-size word shingling, deterministic 64-bit hashing, sorting, and deduplication before native execution.
 
 ## Exact vector search
 
@@ -251,14 +194,14 @@ The Python-facing database layout is:
 
 All public vector-search inputs are converted to contiguous `float32` arrays. The package internally stores the database in a Fortran-compatible `(dimension, vector_count)` layout.
 
-### Inner product
-
-Higher scores are better.
-
 ```python
 import numpy as np
 
-from fortran_nlp.vector_search import FlatIndexIP
+from fortran_nlp.vector_search import (
+    FlatIndexCosine,
+    FlatIndexIP,
+    FlatIndexL2,
+)
 
 database = np.array(
     [
@@ -269,53 +212,19 @@ database = np.array(
     dtype=np.float32,
 )
 
-query = np.array(
-    [1.0, 2.0, 3.0],
-    dtype=np.float32,
-)
+query = np.array([1.0, 2.0, 3.0], dtype=np.float32)
 
-index = FlatIndexIP(
-    database,
-    backend="auto",
-)
+ip_index = FlatIndexIP(database, backend="auto")
+scores, ids = ip_index.search(query, k=2)
 
-scores, ids = index.search(query, k=2)
+l2_index = FlatIndexL2(database, backend="cuda_fortran")
+distances, ids = l2_index.search(query, k=2)
 
-print(scores)
-print(ids)
+cosine_index = FlatIndexCosine(database, backend="cuda_cublas")
+scores, ids = cosine_index.search(query, k=2)
 ```
 
-### Squared-L2 distance
-
-Lower distances are better. The package returns squared Euclidean distance and does not calculate the square root.
-
-```python
-from fortran_nlp.vector_search import FlatIndexL2
-
-index = FlatIndexL2(
-    database,
-    backend="auto",
-)
-
-distances, ids = index.search(query, k=2)
-```
-
-### Cosine similarity
-
-Database vectors and queries are L2-normalized, then searched using the inner-product backend.
-
-```python
-from fortran_nlp.vector_search import FlatIndexCosine
-
-index = FlatIndexCosine(
-    database,
-    backend="auto",
-)
-
-scores, ids = index.search(query, k=2)
-```
-
-Zero vectors cannot be used with `FlatIndexCosine` because cosine normalization is undefined for a zero norm.
+`FlatIndexL2` returns squared Euclidean distance and does not calculate the square root. `FlatIndexCosine` normalizes the database and queries before inner-product search; zero vectors are invalid.
 
 ## Batched vector search
 
@@ -327,7 +236,7 @@ The public query layout is:
 (query_count, dimension)
 ```
 
-Example:
+Batched search uses the same index:
 
 ```python
 queries = np.array(
@@ -338,28 +247,10 @@ queries = np.array(
     dtype=np.float32,
 )
 
-index = FlatIndexIP(
-    database,
-    backend="auto",
-)
-
-scores, ids = index.search_batch(
-    queries,
-    k=2,
-)
+scores, ids = ip_index.search_batch(queries, k=2)
 
 print(scores.shape)  # (query_count, k)
 print(ids.shape)     # (query_count, k)
-```
-
-`FlatIndexL2` and `FlatIndexCosine` expose the same `search_batch()` interface.
-
-Explicit batched vector execution is supported through all public backends:
-
-```text
-backend="fortran"         -> repeated serial execution
-backend="fortran_openmp"  -> repeated OpenMP execution
-backend="fortran_blas"    -> native BLAS batch execution
 ```
 
 ## Backends
@@ -367,27 +258,26 @@ backend="fortran_blas"    -> native BLAS batch execution
 ### Lexical search
 
 ```text
-fortran          -> handwritten serial Fortran
-fortran_openmp   -> handwritten OpenMP Fortran
-auto             -> workload-aware runtime dispatch
+fortran          -> serial Fortran
+fortran_openmp   -> OpenMP Fortran
+cuda_fortran     -> handwritten CUDA Fortran
+auto             -> CPU workload-aware dispatch
 ```
 
 ### Vector search
 
 ```text
-fortran          -> handwritten serial Fortran
-fortran_openmp   -> handwritten OpenMP Fortran
-fortran_blas     -> OpenBLAS SGEMV/SGEMM through Fortran
-auto             -> workload-aware runtime dispatch
+fortran          -> serial Fortran
+fortran_openmp   -> OpenMP Fortran
+fortran_blas     -> OpenBLAS SGEMV/SGEMM
+cuda_fortran     -> handwritten CUDA Fortran scoring + CPU top-k
+cuda_cublas      -> cuBLAS scoring + CPU top-k
+auto             -> CPU workload-aware dispatch
 ```
 
-## Automatic backend selection
+CUDA backends are explicit in `0.1.1`. `backend="auto"` remains CPU-only. Automatic CPU/GPU crossover dispatch is deferred until calibrated GPU performance data is available.
 
-Both public index families accept:
-
-```python
-backend="auto"
-```
+## Automatic CPU backend selection
 
 Automatic resolution happens at search time, when the complete workload is known. The original `"auto"` request remains visible through the index's `backend` property.
 
@@ -514,96 +404,142 @@ OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=6 python benchmark.py
 
 The package does not globally overwrite `OMP_NUM_THREADS` or `OPENBLAS_NUM_THREADS`.
 
-## Correctness and tests
+## Architecture
+
+```text
+Python public API
+        ↓
+Validation, normalization, and workload description
+        ↓
+Explicit backend routing or CPU backend resolver
+        ↓
+nanobind C++ extension
+        ↓
+stable C ABI
+        ↓
+Fortran / OpenMP / OpenBLAS / CUDA Fortran / cuBLAS
+        ↓
+deterministic CPU top-k
+```
+
+The CPU vector path is separated into:
+
+```text
+vector_search_core.f90   -> serial and OpenMP IP/L2 kernels
+vector_search_blas.f90   -> OpenBLAS SGEMV/SGEMM
+vector_search_c_api.f90  -> C ABI
+cpu_bindings.cpp         -> Python adapter
+topk_core.f90            -> deterministic exact top-k
+```
+
+The CUDA vector path follows the same layered structure:
+
+```text
+vector_search_cuda_core.cuf   -> handwritten CUDA IP/L2 scoring
+vector_search_cublas.cuf      -> cuBLAS IP/L2 scoring
+vector_search_cuda_c_api.cuf  -> C ABI
+cuda_bindings.cpp             -> Python adapter
+topk_core.f90                 -> deterministic CPU top-k
+```
+
+For CUDA vector search in `0.1.1`:
+
+```text
+GPU scoring
+-> copy the complete score array or matrix to host
+-> deterministic CPU top-k
+-> return values and zero-based indices
+```
+
+The cuBLAS squared-L2 path uses:
+
+```text
+GPU squared-norm kernels
+-> cuBLAS SGEMV/SGEMM inner products
+-> GPU L2 norm-expansion kernel
+-> host top-k
+```
+
+## Correctness and validation
 
 The implementation is validated across:
 
 ```text
-native Fortran core tests
+native Fortran tests
 C ABI tests
 nanobind extension tests
+manual numerical examples
 NumPy equivalence tests
-serial/OpenMP equivalence tests
-BLAS/handwritten equivalence tests
+CPU/CUDA equivalence tests
+handwritten CUDA/cuBLAS equivalence tests
 single-query and batched-query tests
+cosine normalization tests
 public Python API tests
 input-validation and edge-case tests
 deterministic tie-handling tests
-fallback-policy and profile tests
-calibration-profile management tests
-memory-guardrail tests
-OpenMP and OpenBLAS restoration tests
-package-metadata tests
-wheel smoke tests
+fallback-policy and calibration-profile tests
+memory-guardrail and thread-restoration tests
+CPU-only and CUDA-enabled build tests
 ```
 
-The stable `0.1.0` release passes **205 Python tests**.
+Validated `0.1.1` configurations include:
 
-Run the Python test suite:
+- CUDA-enabled editable build: 428 Python tests passed
+- CUDA-focused suites: 223 tests passed
+- Public CUDA vector-index suite: 116 tests passed
+- Low-level CUDA vector suite: 84 tests passed
+- CPU-only editable build: 205 tests passed with `_cuda` absent
+
+Run the complete available suite:
 
 ```bash
-python -m pytest tests/ -v
+python -m pytest tests -q
 ```
 
-Native test programs are available under:
+Native test programs and runners are available under:
 
 ```text
 tests/native/
 ```
 
-### Continuous integration
+## Current limitations
 
-The repository includes two Linux CI workflows:
+- Linux x86-64 only
+- Result IDs are zero-based positional indices
+- Exact top-k selection currently uses an `O(Nk)` implementation
+- CUDA wheels require external NVIDIA runtime libraries
+- CUDA backends must be selected explicitly
+- `backend="auto"` is CPU-only
+- No GPU-resident database or corpus
+- No GPU top-k or fused scoring-selection kernel
+- No CPU/GPU crossover policy, multi-GPU execution, or mixed-precision scoring
+- No CPU affinity, NUMA-aware dispatch, or hybrid-core-aware placement
 
-```text
-CPU Tests
--> builds the package from source
--> runs the complete test suite on CPython 3.10-3.13
-
-Build Linux Wheels
--> builds and tests manylinux wheels with cibuildwheel
--> targets CPython 3.10, 3.11, 3.12, and 3.13
-```
-
-The wheel workflow runs manually or when a version tag matching `v*` is pushed. Generated wheels are stored as workflow artifacts. Release attachment and PyPI publication remain explicit release steps.
-
-## Build system
+## Build and release system
 
 The project uses:
 
 ```text
-meson-python  → Python build backend
-Meson         → native build configuration
-GFortran      → Fortran compilation
-nanobind      → compiled Python extension
-OpenMP        → handwritten multicore kernels
-OpenBLAS      → SGEMV and SGEMM vector-search backends
+meson-python   -> Python build backend
+Meson          -> native build configuration
+GFortran       -> CPU Fortran compilation
+nanobind       -> compiled Python extensions
+OpenMP         -> handwritten multicore kernels
+OpenBLAS       -> CPU SGEMV and SGEMM
+NVIDIA HPC SDK -> CUDA Fortran compilation
+cuBLAS         -> GPU SGEMV and SGEMM
 ```
 
-Build the wheel and source distribution:
+Build and validate the CPU source distribution and wheel:
 
 ```bash
-python -m pip install build
-rm -rf dist/ build/ .mesonpy-*
+python -m pip install build twine
+rm -rf dist build .mesonpy-*
 python -m build
-```
-
-Expected release artifacts:
-
-```text
-fortran_nlp_kernels-0.1.0-cp310-cp310-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0-cp311-cp311-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0-cp312-cp312-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0-cp313-cp313-manylinux_2_28_x86_64.whl
-fortran_nlp_kernels-0.1.0.tar.gz
-```
-
-Validate distribution metadata and README rendering:
-
-```bash
-python -m pip install twine
 python -m twine check dist/*
 ```
+
+Official CPU and CUDA distributions are built in GitHub Actions and published to separate PyPI projects through Trusted Publishing.
 
 ## Research direction
 
@@ -624,20 +560,15 @@ Working technical-report title:
 
 ## Roadmap
 
-Planned follow-up work includes:
+Follow-up work may include:
 
-- machine-specific workload crossover calibration;
-- expanded calibration stability statistics;
-- optional document and vector IDs;
-- optimized exact top-k selection;
-- CPU performance evaluation against NumPy, C++, and FAISS;
-- automated PyPI Trusted Publishing;
-- broader platform and architecture support;
-- CUDA Fortran lexical and vector-search kernels;
-- cuBLAS-backed vector search;
-- CUDA C++ research baselines;
-- FAISS GPU exact-flat comparisons;
-- GPU-resident corpora and vector databases.
+- faster exact top-k selection;
+- persistent GPU-resident databases and corpora;
+- GPU top-k and fused score-selection kernels;
+- calibrated CPU/GPU crossover dispatch;
+- broader Python, platform, and GPU-architecture support;
+- CUDA C++ and FAISS research comparisons;
+- multi-GPU and mixed-precision experiments.
 
 ## License
 

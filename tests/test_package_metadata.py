@@ -10,6 +10,6 @@ def test_package_exposes_version():
     )
 
     assert re.fullmatch(
-        r"\d+\.\d+\.\d+(?:[abrc]\d+)?",
+        r"\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?(?:\.dev\d+)?",
         fortran_nlp.__version__,
     )

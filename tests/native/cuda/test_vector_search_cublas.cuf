@@ -1,0 +1,674 @@
+program test_vector_search_cublas
+    use, intrinsic :: iso_fortran_env, only: real32, int64
+
+    use fnlp_vector_search_core, only: &
+        l2_database_serial, &
+        ip_database_serial, &
+        l2_search_serial, &
+        ip_search_serial
+
+    use fnlp_vector_search_cublas, only: &
+        l2_database_cublas, &
+        ip_database_cublas, &
+        l2_search_cublas, &
+        ip_search_cublas, &
+        l2_database_batch_cublas, &
+        ip_database_batch_cublas, &
+        l2_search_batch_cublas, &
+        ip_search_batch_cublas
+
+    implicit none
+
+    call test_known_single_scores()
+    call test_single_search()
+    call test_single_deterministic_ties()
+    call test_single_dimension()
+    call test_zero_and_negative_values()
+    call test_large_single_database()
+    call test_batch_score_matrices()
+    call test_batch_search()
+    call test_batch_size_one()
+    call test_batch_deterministic_ties()
+    call test_large_batch()
+    call test_l2_identical_vectors_are_nonnegative()
+
+    print *, "cuBLAS vector-search tests passed"
+
+contains
+
+    subroutine test_known_single_scores()
+        integer, parameter :: dimension = 3
+        integer, parameter :: vector_count = 4
+
+        real(real32) :: query(dimension)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count)
+        real(real32) :: cublas_l2(vector_count)
+        real(real32) :: cpu_ip(vector_count)
+        real(real32) :: cublas_ip(vector_count)
+        real(real32) :: expected_l2(vector_count)
+        real(real32) :: expected_ip(vector_count)
+
+        query = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 2) = [2.0_real32, 0.0_real32, 4.0_real32]
+        database(:, 3) = [-1.0_real32, -2.0_real32, -3.0_real32]
+        database(:, 4) = 0.0_real32
+
+        expected_l2 = [ &
+            0.0_real32, &
+            6.0_real32, &
+            56.0_real32, &
+            14.0_real32 &
+        ]
+
+        expected_ip = [ &
+            14.0_real32, &
+            14.0_real32, &
+            -14.0_real32, &
+            0.0_real32 &
+        ]
+
+        call l2_database_serial(query, database, cpu_l2)
+        call l2_database_cublas(query, database, cublas_l2)
+        call ip_database_serial(query, database, cpu_ip)
+        call ip_database_cublas(query, database, cublas_ip)
+
+        call assert_real32_vector_close( &
+            cpu_l2, expected_l2, "known CPU L2 scores" &
+        )
+        call assert_real32_vector_close( &
+            cublas_l2, expected_l2, "known cuBLAS L2 scores" &
+        )
+        call assert_real32_vector_close( &
+            cpu_ip, expected_ip, "known CPU IP scores" &
+        )
+        call assert_real32_vector_close( &
+            cublas_ip, expected_ip, "known cuBLAS IP scores" &
+        )
+
+        print *, "Known single-query scores: PASS"
+    end subroutine test_known_single_scores
+
+
+    subroutine test_single_search()
+        integer, parameter :: dimension = 3
+        integer, parameter :: vector_count = 5
+        integer, parameter :: k = 3
+
+        real(real32) :: query(dimension)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(k)
+        real(real32) :: cublas_l2(k)
+        real(real32) :: cpu_ip(k)
+        real(real32) :: cublas_ip(k)
+        integer(int64) :: cpu_l2_indices(k)
+        integer(int64) :: cublas_l2_indices(k)
+        integer(int64) :: cpu_ip_indices(k)
+        integer(int64) :: cublas_ip_indices(k)
+
+        query = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 1) = query
+        database(:, 2) = [2.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 3) = [1.0_real32, 4.0_real32, 3.0_real32]
+        database(:, 4) = 0.0_real32
+        database(:, 5) = [-1.0_real32, -2.0_real32, -3.0_real32]
+
+        call l2_search_serial( &
+            query, database, k, cpu_l2, cpu_l2_indices &
+        )
+        call l2_search_cublas( &
+            query, database, k, cublas_l2, cublas_l2_indices &
+        )
+        call ip_search_serial( &
+            query, database, k, cpu_ip, cpu_ip_indices &
+        )
+        call ip_search_cublas( &
+            query, database, k, cublas_ip, cublas_ip_indices &
+        )
+
+        call assert_real32_vector_close( &
+            cublas_l2, cpu_l2, "single cuBLAS L2 top-k values" &
+        )
+        call assert_int64_vector_equal( &
+            cublas_l2_indices, cpu_l2_indices, &
+            "single cuBLAS L2 top-k indices" &
+        )
+        call assert_real32_vector_close( &
+            cublas_ip, cpu_ip, "single cuBLAS IP top-k values" &
+        )
+        call assert_int64_vector_equal( &
+            cublas_ip_indices, cpu_ip_indices, &
+            "single cuBLAS IP top-k indices" &
+        )
+
+        print *, "Single-query cuBLAS search: PASS"
+    end subroutine test_single_search
+
+
+    subroutine test_single_deterministic_ties()
+        integer, parameter :: dimension = 2
+        integer, parameter :: vector_count = 4
+        integer, parameter :: k = vector_count
+
+        real(real32) :: query(dimension)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: l2_values(k)
+        real(real32) :: ip_values(k)
+        integer(int64) :: l2_indices(k)
+        integer(int64) :: ip_indices(k)
+        integer(int64) :: expected_indices(k)
+
+        query = [1.0_real32, 1.0_real32]
+        database(:, 1) = [1.0_real32, 0.0_real32]
+        database(:, 2) = [0.0_real32, 1.0_real32]
+        database(:, 3) = database(:, 1)
+        database(:, 4) = database(:, 2)
+        expected_indices = [0_int64, 1_int64, 2_int64, 3_int64]
+
+        call l2_search_cublas( &
+            query, database, k, l2_values, l2_indices &
+        )
+        call ip_search_cublas( &
+            query, database, k, ip_values, ip_indices &
+        )
+
+        call assert_int64_vector_equal( &
+            l2_indices, expected_indices, &
+            "single deterministic cuBLAS L2 ties" &
+        )
+        call assert_int64_vector_equal( &
+            ip_indices, expected_indices, &
+            "single deterministic cuBLAS IP ties" &
+        )
+
+        print *, "Single-query deterministic ties: PASS"
+    end subroutine test_single_deterministic_ties
+
+
+    subroutine test_single_dimension()
+        real(real32) :: query(1)
+        real(real32) :: database(1, 5)
+        real(real32) :: cublas_l2(5)
+        real(real32) :: cublas_ip(5)
+
+        query = [2.0_real32]
+        database(1, :) = [ &
+            -2.0_real32, 0.0_real32, 2.0_real32, &
+            3.0_real32, 5.0_real32 &
+        ]
+
+        call l2_database_cublas(query, database, cublas_l2)
+        call ip_database_cublas(query, database, cublas_ip)
+
+        call assert_real32_vector_close( &
+            cublas_l2, &
+            [16.0_real32, 4.0_real32, 0.0_real32, &
+             1.0_real32, 9.0_real32], &
+            "single-dimension cuBLAS L2" &
+        )
+        call assert_real32_vector_close( &
+            cublas_ip, &
+            [-4.0_real32, 0.0_real32, 4.0_real32, &
+             6.0_real32, 10.0_real32], &
+            "single-dimension cuBLAS IP" &
+        )
+
+        print *, "Single-dimension vectors: PASS"
+    end subroutine test_single_dimension
+
+
+    subroutine test_zero_and_negative_values()
+        real(real32) :: query(4)
+        real(real32) :: database(4, 3)
+        real(real32) :: cpu_l2(3)
+        real(real32) :: cublas_l2(3)
+        real(real32) :: cpu_ip(3)
+        real(real32) :: cublas_ip(3)
+
+        query = [0.0_real32, -2.5_real32, 4.0_real32, -1.0_real32]
+        database(:, 1) = 0.0_real32
+        database(:, 2) = [-3.0_real32, 2.0_real32, -4.0_real32, 1.0_real32]
+        database(:, 3) = query
+
+        call l2_database_serial(query, database, cpu_l2)
+        call l2_database_cublas(query, database, cublas_l2)
+        call ip_database_serial(query, database, cpu_ip)
+        call ip_database_cublas(query, database, cublas_ip)
+
+        call assert_real32_vector_close( &
+            cublas_l2, cpu_l2, "zero-negative cuBLAS L2" &
+        )
+        call assert_real32_vector_close( &
+            cublas_ip, cpu_ip, "zero-negative cuBLAS IP" &
+        )
+
+        print *, "Zero and negative values: PASS"
+    end subroutine test_zero_and_negative_values
+
+
+    subroutine test_large_single_database()
+        integer, parameter :: dimension = 17
+        integer, parameter :: vector_count = 600
+
+        real(real32) :: query(dimension)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count)
+        real(real32) :: cublas_l2(vector_count)
+        real(real32) :: cpu_ip(vector_count)
+        real(real32) :: cublas_ip(vector_count)
+        integer :: dimension_index
+        integer :: vector_index
+
+        do dimension_index = 1, dimension
+            query(dimension_index) = &
+                real(dimension_index - 9, real32) / 7.0_real32
+        end do
+
+        do vector_index = 1, vector_count
+            do dimension_index = 1, dimension
+                database(dimension_index, vector_index) = real( &
+                    modulo( &
+                        dimension_index * 13 + vector_index * 7, 41 &
+                    ) - 20, &
+                    real32 &
+                ) / 9.0_real32
+            end do
+        end do
+
+        call l2_database_serial(query, database, cpu_l2)
+        call l2_database_cublas(query, database, cublas_l2)
+        call ip_database_serial(query, database, cpu_ip)
+        call ip_database_cublas(query, database, cublas_ip)
+
+        call assert_real32_vector_close( &
+            cublas_l2, cpu_l2, "large-database cuBLAS L2" &
+        )
+        call assert_real32_vector_close( &
+            cublas_ip, cpu_ip, "large-database cuBLAS IP" &
+        )
+
+        print *, "Large single-query database: PASS"
+    end subroutine test_large_single_database
+
+
+    subroutine test_batch_score_matrices()
+        integer, parameter :: dimension = 3
+        integer, parameter :: query_count = 3
+        integer, parameter :: vector_count = 4
+
+        real(real32) :: queries(dimension, query_count)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count, query_count)
+        real(real32) :: cublas_l2(vector_count, query_count)
+        real(real32) :: cpu_ip(vector_count, query_count)
+        real(real32) :: cublas_ip(vector_count, query_count)
+        integer :: query_index
+
+        queries(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        queries(:, 2) = [-1.0_real32, 0.5_real32, 2.0_real32]
+        queries(:, 3) = [0.0_real32, -2.0_real32, 1.0_real32]
+
+        database(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 2) = [2.0_real32, 0.0_real32, 4.0_real32]
+        database(:, 3) = [-1.0_real32, -2.0_real32, -3.0_real32]
+        database(:, 4) = 0.0_real32
+
+        do query_index = 1, query_count
+            call l2_database_serial( &
+                queries(:, query_index), database, cpu_l2(:, query_index) &
+            )
+            call ip_database_serial( &
+                queries(:, query_index), database, cpu_ip(:, query_index) &
+            )
+        end do
+
+        call l2_database_batch_cublas(queries, database, cublas_l2)
+        call ip_database_batch_cublas(queries, database, cublas_ip)
+
+        call assert_real32_matrix_close( &
+            cublas_l2, cpu_l2, "batched cuBLAS L2 score matrix" &
+        )
+        call assert_real32_matrix_close( &
+            cublas_ip, cpu_ip, "batched cuBLAS IP score matrix" &
+        )
+
+        print *, "Batched cuBLAS score matrices: PASS"
+    end subroutine test_batch_score_matrices
+
+
+    subroutine test_batch_search()
+        integer, parameter :: dimension = 3
+        integer, parameter :: query_count = 3
+        integer, parameter :: vector_count = 5
+        integer, parameter :: k = 3
+
+        real(real32) :: queries(dimension, query_count)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(k, query_count)
+        real(real32) :: cublas_l2(k, query_count)
+        real(real32) :: cpu_ip(k, query_count)
+        real(real32) :: cublas_ip(k, query_count)
+        integer(int64) :: cpu_l2_indices(k, query_count)
+        integer(int64) :: cublas_l2_indices(k, query_count)
+        integer(int64) :: cpu_ip_indices(k, query_count)
+        integer(int64) :: cublas_ip_indices(k, query_count)
+        integer :: query_index
+
+        queries(:, 1) = [1.0_real32, 2.0_real32, 3.0_real32]
+        queries(:, 2) = [2.0_real32, -1.0_real32, 0.5_real32]
+        queries(:, 3) = [-2.0_real32, 1.0_real32, 4.0_real32]
+
+        database(:, 1) = queries(:, 1)
+        database(:, 2) = [2.0_real32, 2.0_real32, 3.0_real32]
+        database(:, 3) = [1.0_real32, 4.0_real32, 3.0_real32]
+        database(:, 4) = 0.0_real32
+        database(:, 5) = [-1.0_real32, -2.0_real32, -3.0_real32]
+
+        do query_index = 1, query_count
+            call l2_search_serial( &
+                queries(:, query_index), database, k, &
+                cpu_l2(:, query_index), cpu_l2_indices(:, query_index) &
+            )
+            call ip_search_serial( &
+                queries(:, query_index), database, k, &
+                cpu_ip(:, query_index), cpu_ip_indices(:, query_index) &
+            )
+        end do
+
+        call l2_search_batch_cublas( &
+            queries, database, k, cublas_l2, cublas_l2_indices &
+        )
+        call ip_search_batch_cublas( &
+            queries, database, k, cublas_ip, cublas_ip_indices &
+        )
+
+        call assert_real32_matrix_close( &
+            cublas_l2, cpu_l2, "batched cuBLAS L2 top-k values" &
+        )
+        call assert_int64_matrix_equal( &
+            cublas_l2_indices, cpu_l2_indices, &
+            "batched cuBLAS L2 top-k indices" &
+        )
+        call assert_real32_matrix_close( &
+            cublas_ip, cpu_ip, "batched cuBLAS IP top-k values" &
+        )
+        call assert_int64_matrix_equal( &
+            cublas_ip_indices, cpu_ip_indices, &
+            "batched cuBLAS IP top-k indices" &
+        )
+
+        print *, "Batched cuBLAS search: PASS"
+    end subroutine test_batch_search
+
+
+    subroutine test_batch_size_one()
+        real(real32) :: queries(4, 1)
+        real(real32) :: database(4, 5)
+        real(real32) :: single_l2(5)
+        real(real32) :: batch_l2(5, 1)
+        real(real32) :: single_ip(5)
+        real(real32) :: batch_ip(5, 1)
+        integer :: dimension_index
+        integer :: vector_index
+
+        queries(:, 1) = [ &
+            1.0_real32, -2.0_real32, 3.0_real32, 0.5_real32 &
+        ]
+
+        do vector_index = 1, 5
+            do dimension_index = 1, 4
+                database(dimension_index, vector_index) = real( &
+                    dimension_index - 2 * vector_index, real32 &
+                ) / 3.0_real32
+            end do
+        end do
+
+        call l2_database_cublas(queries(:, 1), database, single_l2)
+        call l2_database_batch_cublas(queries, database, batch_l2)
+        call ip_database_cublas(queries(:, 1), database, single_ip)
+        call ip_database_batch_cublas(queries, database, batch_ip)
+
+        call assert_real32_vector_close( &
+            batch_l2(:, 1), single_l2, "cuBLAS batch-size-one L2" &
+        )
+        call assert_real32_vector_close( &
+            batch_ip(:, 1), single_ip, "cuBLAS batch-size-one IP" &
+        )
+
+        print *, "cuBLAS batch size one: PASS"
+    end subroutine test_batch_size_one
+
+
+    subroutine test_batch_deterministic_ties()
+        integer, parameter :: k = 4
+
+        real(real32) :: queries(2, 2)
+        real(real32) :: database(2, 4)
+        real(real32) :: l2_values(k, 2)
+        real(real32) :: ip_values(k, 2)
+        integer(int64) :: l2_indices(k, 2)
+        integer(int64) :: ip_indices(k, 2)
+        integer(int64) :: expected_indices(k, 2)
+
+        queries(:, 1) = [1.0_real32, 1.0_real32]
+        queries(:, 2) = [-1.0_real32, -1.0_real32]
+        database(:, 1) = [1.0_real32, 0.0_real32]
+        database(:, 2) = [0.0_real32, 1.0_real32]
+        database(:, 3) = database(:, 1)
+        database(:, 4) = database(:, 2)
+        expected_indices(:, 1) = [0_int64, 1_int64, 2_int64, 3_int64]
+        expected_indices(:, 2) = expected_indices(:, 1)
+
+        call l2_search_batch_cublas( &
+            queries, database, k, l2_values, l2_indices &
+        )
+        call ip_search_batch_cublas( &
+            queries, database, k, ip_values, ip_indices &
+        )
+
+        call assert_int64_matrix_equal( &
+            l2_indices, expected_indices, &
+            "batched deterministic cuBLAS L2 ties" &
+        )
+        call assert_int64_matrix_equal( &
+            ip_indices, expected_indices, &
+            "batched deterministic cuBLAS IP ties" &
+        )
+
+        print *, "Batched deterministic ties: PASS"
+    end subroutine test_batch_deterministic_ties
+
+
+    subroutine test_large_batch()
+        integer, parameter :: dimension = 11
+        integer, parameter :: query_count = 5
+        integer, parameter :: vector_count = 173
+
+        real(real32) :: queries(dimension, query_count)
+        real(real32) :: database(dimension, vector_count)
+        real(real32) :: cpu_l2(vector_count, query_count)
+        real(real32) :: cublas_l2(vector_count, query_count)
+        real(real32) :: cpu_ip(vector_count, query_count)
+        real(real32) :: cublas_ip(vector_count, query_count)
+        integer :: dimension_index
+        integer :: query_index
+        integer :: vector_index
+
+        do query_index = 1, query_count
+            do dimension_index = 1, dimension
+                queries(dimension_index, query_index) = real( &
+                    modulo( &
+                        dimension_index * 7 + query_index * 11, 37 &
+                    ) - 18, &
+                    real32 &
+                ) / 8.0_real32
+            end do
+        end do
+
+        do vector_index = 1, vector_count
+            do dimension_index = 1, dimension
+                database(dimension_index, vector_index) = real( &
+                    modulo( &
+                        dimension_index * 13 + vector_index * 5, 43 &
+                    ) - 21, &
+                    real32 &
+                ) / 9.0_real32
+            end do
+        end do
+
+        do query_index = 1, query_count
+            call l2_database_serial( &
+                queries(:, query_index), database, cpu_l2(:, query_index) &
+            )
+            call ip_database_serial( &
+                queries(:, query_index), database, cpu_ip(:, query_index) &
+            )
+        end do
+
+        call l2_database_batch_cublas(queries, database, cublas_l2)
+        call ip_database_batch_cublas(queries, database, cublas_ip)
+
+        call assert_real32_matrix_close( &
+            cublas_l2, cpu_l2, "large batched cuBLAS L2" &
+        )
+        call assert_real32_matrix_close( &
+            cublas_ip, cpu_ip, "large batched cuBLAS IP" &
+        )
+
+        print *, "Large cuBLAS batch: PASS"
+    end subroutine test_large_batch
+
+
+    subroutine test_l2_identical_vectors_are_nonnegative()
+        real(real32) :: queries(8, 2)
+        real(real32) :: database(8, 2)
+        real(real32) :: single_distances(2)
+        real(real32) :: batch_distances(2, 2)
+
+        queries(:, 1) = [ &
+            0.1_real32, 0.2_real32, 0.3_real32, 0.4_real32, &
+            0.5_real32, 0.6_real32, 0.7_real32, 0.8_real32 &
+        ]
+        queries(:, 2) = -queries(:, 1)
+        database = queries
+
+        call l2_database_cublas(queries(:, 1), database, single_distances)
+        call l2_database_batch_cublas(queries, database, batch_distances)
+
+        if (any(single_distances < 0.0_real32)) then
+            error stop "Single cuBLAS L2 returned a negative distance"
+        end if
+
+        if (any(batch_distances < 0.0_real32)) then
+            error stop "Batched cuBLAS L2 returned a negative distance"
+        end if
+
+        if (single_distances(1) > 1.0e-5_real32) then
+            error stop "Identical single-query vectors must have zero L2"
+        end if
+
+        if (batch_distances(1, 1) > 1.0e-5_real32 .or. &
+            batch_distances(2, 2) > 1.0e-5_real32) then
+            error stop "Identical batched vectors must have zero L2"
+        end if
+
+        print *, "L2 rounding clamp: PASS"
+    end subroutine test_l2_identical_vectors_are_nonnegative
+
+
+    subroutine assert_real32_vector_close(actual, expected, label)
+        real(real32), intent(in) :: actual(:)
+        real(real32), intent(in) :: expected(:)
+        character(len=*), intent(in) :: label
+
+        real(real32), parameter :: absolute_tolerance = 1.0e-4_real32
+        real(real32), parameter :: relative_tolerance = 1.0e-4_real32
+        real(real32) :: allowed_error
+        real(real32) :: difference
+        integer :: value_index
+
+        if (size(actual) /= size(expected)) then
+            print *, trim(label), ": vector-size mismatch"
+            print *, "Actual size:  ", size(actual)
+            print *, "Expected size:", size(expected)
+            error stop "real32 vector assertion failed"
+        end if
+
+        do value_index = 1, size(actual)
+            difference = abs(actual(value_index) - expected(value_index))
+            allowed_error = absolute_tolerance + &
+                relative_tolerance * abs(expected(value_index))
+
+            if (difference > allowed_error) then
+                print *, trim(label), ": value mismatch"
+                print *, "Index:   ", value_index
+                print *, "Actual:  ", actual(value_index)
+                print *, "Expected:", expected(value_index)
+                print *, "Error:   ", difference
+                print *, "Allowed: ", allowed_error
+                error stop "real32 vector assertion failed"
+            end if
+        end do
+    end subroutine assert_real32_vector_close
+
+
+    subroutine assert_real32_matrix_close(actual, expected, label)
+        real(real32), intent(in) :: actual(:, :)
+        real(real32), intent(in) :: expected(:, :)
+        character(len=*), intent(in) :: label
+        integer :: column_index
+
+        if (any(shape(actual) /= shape(expected))) then
+            print *, trim(label), ": matrix-shape mismatch"
+            print *, "Actual shape:  ", shape(actual)
+            print *, "Expected shape:", shape(expected)
+            error stop "real32 matrix assertion failed"
+        end if
+
+        do column_index = 1, size(actual, dim=2)
+            call assert_real32_vector_close( &
+                actual(:, column_index), &
+                expected(:, column_index), &
+                label &
+            )
+        end do
+    end subroutine assert_real32_matrix_close
+
+
+    subroutine assert_int64_vector_equal(actual, expected, label)
+        integer(int64), intent(in) :: actual(:)
+        integer(int64), intent(in) :: expected(:)
+        character(len=*), intent(in) :: label
+
+        if (size(actual) /= size(expected)) then
+            error stop "int64 vector-size mismatch"
+        end if
+
+        if (any(actual /= expected)) then
+            print *, trim(label), ": value mismatch"
+            print *, "Actual:  ", actual
+            print *, "Expected:", expected
+            error stop "int64 vector assertion failed"
+        end if
+    end subroutine assert_int64_vector_equal
+
+
+    subroutine assert_int64_matrix_equal(actual, expected, label)
+        integer(int64), intent(in) :: actual(:, :)
+        integer(int64), intent(in) :: expected(:, :)
+        character(len=*), intent(in) :: label
+
+        if (any(shape(actual) /= shape(expected))) then
+            error stop "int64 matrix-shape mismatch"
+        end if
+
+        if (any(actual /= expected)) then
+            print *, trim(label), ": value mismatch"
+            print *, "Actual:  ", actual
+            print *, "Expected:", expected
+            error stop "int64 matrix assertion failed"
+        end if
+    end subroutine assert_int64_matrix_equal
+
+end program test_vector_search_cublas
