@@ -8,7 +8,7 @@ option(
 option(
   'fnlp_cuda_arch',
   type: 'string',
-  value: 'cc86',
+  value: 'cc75',
   description: 'CUDA compute capability passed to nvfortran',
 )
 
@@ -17,4 +17,11 @@ option(
   type: 'string',
   value: 'cuda13.3',
   description: 'CUDA toolkit version passed to nvfortran',
+)
+
+option(
+    'fnlp_nvhpc_root',
+    type: 'string',
+    value: '/opt/nvidia/hpc_sdk/Linux_x86_64/26.9',
+    description: 'NVIDIA HPC SDK installation root',
 )

@@ -1,0 +1,536 @@
+name: Release distributions
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish validated distributions to PyPI
+        required: true
+        type: boolean
+        default: false
+  push:
+    tags:
+      - "v0.1.1"
+permissions:
+  contents: read
+jobs:
+  build-cpu-wheels:
+    name: Build CPU wheel for CPython ${{ matrix.python-version }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "310"
+          - "311"
+          - "312"
+          - "313"
+    env:
+      CIBW_BUILD: "cp${{ matrix.python-version }}-manylinux_x86_64"
+      CIBW_MANYLINUX_X86_64_IMAGE: "manylinux_2_28"
+      CIBW_BUILD_VERBOSITY: "1"
+      CIBW_BEFORE_ALL_LINUX: >
+        dnf install -y
+        gcc-gfortran
+        gcc-c++
+        openblas-devel
+      CIBW_ENVIRONMENT_LINUX: >
+        OMP_NUM_THREADS=4
+        OPENBLAS_NUM_THREADS=1
+      CIBW_TEST_REQUIRES: >
+        pytest>=8
+        numpy>=2.0
+      CIBW_TEST_COMMAND: >
+        python -m pytest {project}/tests -v
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Set up build Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Verify release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import tomllib
+          with open("pyproject.toml", "rb") as file:
+              version = tomllib.load(file)["project"]["version"]
+          if version != "0.1.1":
+              raise SystemExit(
+                  f"Expected base package version 0.1.1, found {version}"
+              )
+          print("Base package version:", version)
+          PY
+      - name: Install cibuildwheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install cibuildwheel==4.3.1
+      - name: Build and test CPU wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m cibuildwheel </span>
+            --platform linux </span>
+            --output-dir wheelhouse
+      - name: List generated CPU wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -lh wheelhouse/
+          wheel_count="$(
+            find wheelhouse </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name '.whl' </span>
+              | wc -l
+          )"
+          if [[ "$wheel_count" -ne 1 ]]; then
+              echo "Expected exactly one CPU wheel, found $wheel_count"
+              exit 1
+          fi
+      - name: Upload CPU wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-wheel-cp${{ matrix.python-version }}
+          path: wheelhouse/.whl
+          if-no-files-found: error
+          retention-days: 14
+  build-cpu-sdist:
+    name: Build CPU source distribution
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade </span>
+            pip </span>
+            build </span>
+            twine
+      - name: Build source distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          python -m build --sdist
+          python -m twine check dist/
+          ls -lh dist/
+      - name: Upload source distribution artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-sdist
+          path: dist/.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+  collect-cpu-distributions:
+    name: Collect and validate CPU distributions
+    runs-on: ubuntu-24.04
+    needs:
+      - build-cpu-wheels
+      - build-cpu-sdist
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Download CPU wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cpu-wheel-
+          path: dist
+          merge-multiple: true
+      - name: Download CPU source distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: cpu-sdist
+          path: dist
+      - name: Validate collected CPU distributions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade </span>
+            pip </span>
+            twine
+          echo "Collected CPU distributions:"
+          ls -lh dist/
+          wheel_count="$(
+            find dist </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name '.whl' </span>
+              | wc -l
+          )"
+          sdist_count="$(
+            find dist </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name '.tar.gz' </span>
+              | wc -l
+          )"
+          if [[ "$wheel_count" -ne 4 ]]; then
+              echo "Expected four CPU wheels, found $wheel_count"
+              exit 1
+          fi
+          if [[ "$sdist_count" -ne 1 ]]; then
+              echo "Expected one source distribution, found $sdist_count"
+              exit 1
+          fi
+          python -m twine check dist/
+      - name: Upload complete CPU distribution set
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpu-distributions
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+  build-cuda-companion:
+    name: Build and test CUDA companion wheel
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - fnlp-cuda
+    needs:
+      - collect-cpu-distributions
+    env:
+      NVHPC_ROOT: /opt/nvidia/hpc_sdk/Linux_x86_64/26.9
+      CUDA_ARCH: cc75
+      CUDA_TOOLKIT: cuda13.3
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          clean: true
+      - name: Inspect CUDA runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Runner: $RUNNER_NAME"
+          uname -a
+          python3.12 --version
+          g++ --version
+          nvidia-smi </span>
+            --query-gpu=name,compute_cap,driver_version,memory.total </span>
+            --format=csv
+          "$NVHPC_ROOT/compilers/bin/nvfortran" </span>
+            --version
+      - name: Verify CUDA companion version
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3.12 - <<'PY'
+          import tomllib
+          with open(
+              "packaging/cuda/pyproject.toml",
+              "rb",
+          ) as file:
+              project = tomllib.load(file)["project"]
+          if project["name"] != "fortran-nlp-kernels-cuda":
+              raise SystemExit(
+                  "Unexpected CUDA companion project name: "
+                  + project["name"]
+              )
+          if project["version"] != "0.1.1":
+              raise SystemExit(
+                  "Expected CUDA companion version 0.1.1, found "
+                  + project["version"]
+              )
+          if project["dependencies"] != [
+              "fortran-nlp-kernels==0.1.1"
+          ]:
+              raise SystemExit(
+                  "CUDA companion must depend exactly on "
+                  "fortran-nlp-kernels==0.1.1"
+              )
+          print("CUDA companion metadata: PASS")
+          PY
+      - name: Download CPU distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: cpu-distributions
+          path: cpu-dist
+      - name: Create isolated build environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf </span>
+            "$RUNNER_TEMP/fnlp-cuda-build-env" </span>
+            "$RUNNER_TEMP/fnlp-wheel-test"
+          python3.12 -m venv </span>
+            "$RUNNER_TEMP/fnlp-cuda-build-env"
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
+            -m pip install --upgrade </span>
+            pip </span>
+            build </span>
+            twine </span>
+            auditwheel
+      - name: Stage CUDA companion distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf build/cuda_distribution
+          chmod +x tools/stage_cuda_distribution.sh
+          tools/stage_cuda_distribution.sh
+          echo "Staged CUDA companion files:"
+          find build/cuda_distribution </span>
+            -type f </span>
+            -printf '%P\n' </span>
+            | sort
+      - name: Build CUDA companion wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd build/cuda_distribution
+          rm -rf dist .mesonpy-
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
+            -m build </span>
+            --wheel </span>
+            --config-setting=setup-args="-Dfnlp_cuda_arch=$CUDA_ARCH" </span>
+            --config-setting=setup-args="-Dfnlp_cuda_toolkit=$CUDA_TOOLKIT" </span>
+            --config-setting=setup-args="-Dfnlp_nvhpc_root=$NVHPC_ROOT"
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
+            -m twine check </span>
+            dist/
+          ls -lh dist/
+      - name: Verify CUDA wheel contents
+        shell: bash
+        run: |
+          set -euo pipefail
+          cuda_wheel="$(
+            find build/cuda_distribution/dist </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name </span>
+              'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-linux_x86_64.whl'
+          )"
+          if [[ -z "$cuda_wheel" ]]; then
+              echo "Expected CUDA companion wheel was not generated"
+              find build/cuda_distribution/dist </span>
+                -maxdepth 1 </span>
+                -type f </span>
+                -print
+              exit 1
+          fi
+          rm -rf wheel-inspect
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
+            -m zipfile </span>
+            -e </span>
+            "$cuda_wheel" </span>
+            wheel-inspect
+          cuda_extension="$(
+            find wheel-inspect/fortran_nlp </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name '_cuda.so' </span>
+              -print </span>
+              -quit
+          )"
+          if [[ -z "$cuda_extension" ]]; then
+              echo "CUDA wheel does not contain _cuda extension"
+              exit 1
+          fi
+          if find wheel-inspect </span>
+            -type f </span>
+            -name '_cpu*.so' </span>
+            | grep -q .
+          then
+              echo "CUDA companion wheel must not contain _cpu"
+              exit 1
+          fi
+          if find wheel-inspect/fortran_nlp </span>
+            -type f </span>
+            -name '.py' </span>
+            | grep -q .
+          then
+              echo "CUDA companion wheel must not duplicate Python sources"
+              exit 1
+          fi
+          echo "CUDA extension: $cuda_extension"
+          ldd "$cuda_extension"
+          if ldd "$cuda_extension" | grep -q 'not found'
+          then
+              echo "CUDA extension has unresolved runtime libraries"
+              exit 1
+          fi
+          readelf -d "$cuda_extension" </span>
+            | grep NEEDED
+      - name: Audit CUDA wheel
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
+            -m auditwheel show </span>
+            build/cuda_distribution/dist/.whl
+      - name: Install exact CPU and CUDA wheels
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3.12 -m venv </span>
+            "$RUNNER_TEMP/fnlp-wheel-test"
+          test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
+          "$test_python" </span>
+            -m pip install --upgrade </span>
+            pip </span>
+            pytest
+          cpu_wheel="$(
+            find cpu-dist </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name </span>
+              'fortran_nlp_kernels-0.1.1-cp312-.whl' </span>
+              -print </span>
+              -quit
+          )"
+          cuda_wheel="$(
+            find build/cuda_distribution/dist </span>
+              -maxdepth 1 </span>
+              -type f </span>
+              -name </span>
+              'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-linux_x86_64.whl' </span>
+              -print </span>
+              -quit
+          )"
+          if [[ -z "$cpu_wheel" ]]; then
+              echo "CPython 3.12 CPU wheel was not found"
+              exit 1
+          fi
+          if [[ -z "$cuda_wheel" ]]; then
+              echo "CUDA companion wheel was not found"
+              exit 1
+          fi
+          "$test_python" </span>
+            -m pip install </span>
+            "$cpu_wheel" </span>
+            "$cuda_wheel"
+      - name: Verify installed wheel extensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
+          "$test_python" - <<'PY'
+          from fortran_nlp import _cpu, _cuda
+          print("_cpu:", _cpu.file)
+          print("_cuda:", _cuda.file)
+          if "site-packages" not in _cpu.file:
+              raise SystemExit(
+                  "_cpu was not imported from the wheel environment"
+              )
+          if "site-packages" not in _cuda.file:
+              raise SystemExit(
+                  "_cuda was not imported from the wheel environment"
+              )
+          required = [
+              "l2_search_cuda",
+              "ip_search_cuda",
+              "l2_search_batch_cuda",
+              "ip_search_batch_cuda",
+              "l2_search_cublas",
+              "ip_search_cublas",
+              "l2_search_batch_cublas",
+              "ip_search_batch_cublas",
+          ]
+          missing = [
+              name
+              for name in required
+              if not hasattr(_cuda, name)
+          ]
+          if missing:
+              raise SystemExit(
+                  f"Missing CUDA bindings: {missing}"
+              )
+          print("Installed CPU and CUDA wheel imports: PASS")
+          PY
+      - name: Run CUDA wheel tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
+          cd "$RUNNER_TEMP"
+          "$test_python" </span>
+            -m pytest </span>
+            "$GITHUB_WORKSPACE/tests/test_cuda_lexical_native.py" </span>
+            "$GITHUB_WORKSPACE/tests/test_cuda_jaccard_index.py" </span>
+            "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_native.py" </span>
+            "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_public.py" </span>
+            -q </span>
+            --maxfail=1
+      - name: Prepare CUDA distribution artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf cuda-dist
+          mkdir -p cuda-dist
+          cp </span>
+            build/cuda_distribution/dist/.whl </span>
+            cuda-dist/
+          ls -lh cuda-dist/
+      - name: Upload CUDA companion artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuda-distribution
+          path: cuda-dist/*.whl
+          if-no-files-found: error
+          retention-days: 14
+  publish-cpu:
+    name: Publish CPU distribution to PyPI
+    runs-on: ubuntu-latest
+    needs:
+      - collect-cpu-distributions
+      - build-cuda-companion
+    if: >
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        inputs.publish == true
+      )
+    environment:
+      name: pypi-cpu
+      url: https://pypi.org/project/fortran-nlp-kernels/0.1.1/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download CPU distributions
+        uses: actions/download-artifact@v4
+        with:
+          name: cpu-distributions
+          path: dist
+      - name: Publish CPU distributions
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+  publish-cuda:
+    name: Publish CUDA companion to PyPI
+    runs-on: ubuntu-latest
+    needs:
+      - build-cuda-companion
+      - publish-cpu
+    if: >
+      github.event_name == 'push' ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        inputs.publish == true
+      )
+    environment:
+      name: pypi-cuda
+      url: https://pypi.org/project/fortran-nlp-kernels-cuda/0.1.1/
+    permissions:
+      id-token: write
+    steps:
+      - name: Download CUDA companion distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: cuda-distribution
+          path: dist
+      - name: Publish CUDA companion
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
