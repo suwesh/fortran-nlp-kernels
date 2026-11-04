@@ -323,11 +323,6 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - name: Download CPU distributions
-        uses: actions/download-artifact@v4
-        with:
-          name: cpu-distributions
-          path: dist
       - name: Publish CPU distributions
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
