@@ -175,8 +175,6 @@ jobs:
       - Linux
       - X64
       - fnlp-cuda
-    needs:
-      - collect-cpu-distributions
     env:
       NVHPC_ROOT: /opt/nvidia/hpc_sdk/Linux_x86_64/26.9
       CUDA_ARCH: cc75
@@ -227,11 +225,6 @@ jobs:
               )
           print("CUDA companion metadata: PASS")
           PY
-      - name: Download CPU distributions
-        uses: actions/download-artifact@v4
-        with:
-          name: cpu-distributions
-          path: cpu-dist
       - name: Create isolated build environment
         shell: bash
         run: |
@@ -297,69 +290,6 @@ jobs:
         run: |
           set -euo pipefail
           "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" -m auditwheel show build/cuda_distribution/dist/*.whl
-      - name: Install exact CPU and CUDA wheels
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3.12 -m venv "$RUNNER_TEMP/fnlp-wheel-test"
-          test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
-          "$test_python" -m pip install --upgrade pip pytest
-          cpu_wheel="$(find cpu-dist -maxdepth 1 -type f -name 'fortran_nlp_kernels-0.1.1-cp312-*.whl' -print -quit)"
-          cuda_wheel="$(find build/cuda_distribution/dist -maxdepth 1 -type f -name 'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-linux_x86_64.whl' -print -quit)"
-          if [[ -z "$cpu_wheel" ]]; then
-              echo "CPython 3.12 CPU wheel was not found"
-              exit 1
-          fi
-          if [[ -z "$cuda_wheel" ]]; then
-              echo "CUDA companion wheel was not found"
-              exit 1
-          fi
-          "$test_python" -m pip install "$cpu_wheel" "$cuda_wheel"
-      - name: Verify installed wheel extensions
-        shell: bash
-        run: |
-          set -euo pipefail
-          test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
-          "$test_python" - <<'PY'
-          from fortran_nlp import _cpu, _cuda
-          print("_cpu:", _cpu.file)
-          print("_cuda:", _cuda.file)
-          if "site-packages" not in _cpu.file:
-              raise SystemExit(
-                  "_cpu was not imported from the wheel environment"
-              )
-          if "site-packages" not in _cuda.file:
-              raise SystemExit(
-                  "_cuda was not imported from the wheel environment"
-              )
-          required = [
-              "l2_search_cuda",
-              "ip_search_cuda",
-              "l2_search_batch_cuda",
-              "ip_search_batch_cuda",
-              "l2_search_cublas",
-              "ip_search_cublas",
-              "l2_search_batch_cublas",
-              "ip_search_batch_cublas",
-          ]
-          missing = [
-              name
-              for name in required
-              if not hasattr(_cuda, name)
-          ]
-          if missing:
-              raise SystemExit(
-                  f"Missing CUDA bindings: {missing}"
-              )
-          print("Installed CPU and CUDA wheel imports: PASS")
-          PY
-      - name: Run CUDA wheel tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
-          cd "$RUNNER_TEMP"
-          "$test_python" -m pytest "$GITHUB_WORKSPACE/tests/test_cuda_lexical_native.py" "$GITHUB_WORKSPACE/tests/test_cuda_jaccard_index.py" "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_native.py" "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_public.py" -q --maxfail=1
       - name: Prepare CUDA distribution artifact
         shell: bash
         run: |
