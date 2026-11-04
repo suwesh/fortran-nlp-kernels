@@ -72,19 +72,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m cibuildwheel </span>
-            --platform linux </span>
-            --output-dir wheelhouse
+          python -m cibuildwheel --platform linux --output-dir wheelhouse
       - name: List generated CPU wheel
         shell: bash
         run: |
           set -euo pipefail
           ls -lh wheelhouse/
           wheel_count="$(
-            find wheelhouse </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name '.whl' </span>
+            find wheelhouse /
+              -maxdepth 1 /
+              -type f /
+              -name '.whl' /
               | wc -l
           )"
           if [[ "$wheel_count" -ne 1 ]]; then
@@ -112,9 +110,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --upgrade </span>
-            pip </span>
-            build </span>
+          python -m pip install --upgrade /
+            pip /
+            build /
             twine
       - name: Build source distribution
         shell: bash
@@ -157,23 +155,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m pip install --upgrade </span>
-            pip </span>
+          python -m pip install --upgrade /
+            pip /
             twine
           echo "Collected CPU distributions:"
           ls -lh dist/
           wheel_count="$(
-            find dist </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name '.whl' </span>
+            find dist /
+              -maxdepth 1 /
+              -type f /
+              -name '.whl' /
               | wc -l
           )"
           sdist_count="$(
-            find dist </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name '.tar.gz' </span>
+            find dist /
+              -maxdepth 1 /
+              -type f /
+              -name '.tar.gz' /
               | wc -l
           )"
           if [[ "$wheel_count" -ne 4 ]]; then
@@ -218,10 +216,10 @@ jobs:
           uname -a
           python3.12 --version
           g++ --version
-          nvidia-smi </span>
-            --query-gpu=name,compute_cap,driver_version,memory.total </span>
+          nvidia-smi /
+            --query-gpu=name,compute_cap,driver_version,memory.total /
             --format=csv
-          "$NVHPC_ROOT/compilers/bin/nvfortran" </span>
+          "$NVHPC_ROOT/compilers/bin/nvfortran" /
             --version
       - name: Verify CUDA companion version
         shell: bash
@@ -262,16 +260,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf </span>
-            "$RUNNER_TEMP/fnlp-cuda-build-env" </span>
+          rm -rf /
+            "$RUNNER_TEMP/fnlp-cuda-build-env" /
             "$RUNNER_TEMP/fnlp-wheel-test"
-          python3.12 -m venv </span>
+          python3.12 -m venv /
             "$RUNNER_TEMP/fnlp-cuda-build-env"
-          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
-            -m pip install --upgrade </span>
-            pip </span>
-            build </span>
-            twine </span>
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" /
+            -m pip install --upgrade /
+            pip /
+            build /
+            twine /
             auditwheel
       - name: Stage CUDA companion distribution
         shell: bash
@@ -281,9 +279,9 @@ jobs:
           chmod +x tools/stage_cuda_distribution.sh
           tools/stage_cuda_distribution.sh
           echo "Staged CUDA companion files:"
-          find build/cuda_distribution </span>
-            -type f </span>
-            -printf '%P\n' </span>
+          find build/cuda_distribution /
+            -type f /
+            -printf '%P\n' /
             | sort
       - name: Build CUDA companion wheel
         shell: bash
@@ -291,14 +289,14 @@ jobs:
           set -euo pipefail
           cd build/cuda_distribution
           rm -rf dist .mesonpy-
-          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
-            -m build </span>
-            --wheel </span>
-            --config-setting=setup-args="-Dfnlp_cuda_arch=$CUDA_ARCH" </span>
-            --config-setting=setup-args="-Dfnlp_cuda_toolkit=$CUDA_TOOLKIT" </span>
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" /
+            -m build /
+            --wheel /
+            --config-setting=setup-args="-Dfnlp_cuda_arch=$CUDA_ARCH" /
+            --config-setting=setup-args="-Dfnlp_cuda_toolkit=$CUDA_TOOLKIT" /
             --config-setting=setup-args="-Dfnlp_nvhpc_root=$NVHPC_ROOT"
-          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
-            -m twine check </span>
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" /
+            -m twine check /
             dist/
           ls -lh dist/
       - name: Verify CUDA wheel contents
@@ -306,49 +304,49 @@ jobs:
         run: |
           set -euo pipefail
           cuda_wheel="$(
-            find build/cuda_distribution/dist </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name </span>
+            find build/cuda_distribution/dist /
+              -maxdepth 1 /
+              -type f /
+              -name /
               'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-linux_x86_64.whl'
           )"
           if [[ -z "$cuda_wheel" ]]; then
               echo "Expected CUDA companion wheel was not generated"
-              find build/cuda_distribution/dist </span>
-                -maxdepth 1 </span>
-                -type f </span>
+              find build/cuda_distribution/dist /
+                -maxdepth 1 /
+                -type f /
                 -print
               exit 1
           fi
           rm -rf wheel-inspect
-          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
-            -m zipfile </span>
-            -e </span>
-            "$cuda_wheel" </span>
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" /
+            -m zipfile /
+            -e /
+            "$cuda_wheel" /
             wheel-inspect
           cuda_extension="$(
-            find wheel-inspect/fortran_nlp </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name '_cuda.so' </span>
-              -print </span>
+            find wheel-inspect/fortran_nlp /
+              -maxdepth 1 /
+              -type f /
+              -name '_cuda.so' /
+              -print /
               -quit
           )"
           if [[ -z "$cuda_extension" ]]; then
               echo "CUDA wheel does not contain _cuda extension"
               exit 1
           fi
-          if find wheel-inspect </span>
-            -type f </span>
-            -name '_cpu*.so' </span>
+          if find wheel-inspect /
+            -type f /
+            -name '_cpu*.so' /
             | grep -q .
           then
               echo "CUDA companion wheel must not contain _cpu"
               exit 1
           fi
-          if find wheel-inspect/fortran_nlp </span>
-            -type f </span>
-            -name '.py' </span>
+          if find wheel-inspect/fortran_nlp /
+            -type f /
+            -name '.py' /
             | grep -q .
           then
               echo "CUDA companion wheel must not duplicate Python sources"
@@ -361,42 +359,42 @@ jobs:
               echo "CUDA extension has unresolved runtime libraries"
               exit 1
           fi
-          readelf -d "$cuda_extension" </span>
+          readelf -d "$cuda_extension" /
             | grep NEEDED
       - name: Audit CUDA wheel
         shell: bash
         run: |
           set -euo pipefail
-          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" </span>
-            -m auditwheel show </span>
+          "$RUNNER_TEMP/fnlp-cuda-build-env/bin/python" /
+            -m auditwheel show /
             build/cuda_distribution/dist/.whl
       - name: Install exact CPU and CUDA wheels
         shell: bash
         run: |
           set -euo pipefail
-          python3.12 -m venv </span>
+          python3.12 -m venv /
             "$RUNNER_TEMP/fnlp-wheel-test"
           test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
-          "$test_python" </span>
-            -m pip install --upgrade </span>
-            pip </span>
+          "$test_python" /
+            -m pip install --upgrade /
+            pip /
             pytest
           cpu_wheel="$(
-            find cpu-dist </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name </span>
-              'fortran_nlp_kernels-0.1.1-cp312-.whl' </span>
-              -print </span>
+            find cpu-dist /
+              -maxdepth 1 /
+              -type f /
+              -name /
+              'fortran_nlp_kernels-0.1.1-cp312-.whl' /
+              -print /
               -quit
           )"
           cuda_wheel="$(
-            find build/cuda_distribution/dist </span>
-              -maxdepth 1 </span>
-              -type f </span>
-              -name </span>
-              'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-linux_x86_64.whl' </span>
-              -print </span>
+            find build/cuda_distribution/dist /
+              -maxdepth 1 /
+              -type f /
+              -name /
+              'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-linux_x86_64.whl' /
+              -print /
               -quit
           )"
           if [[ -z "$cpu_wheel" ]]; then
@@ -407,9 +405,9 @@ jobs:
               echo "CUDA companion wheel was not found"
               exit 1
           fi
-          "$test_python" </span>
-            -m pip install </span>
-            "$cpu_wheel" </span>
+          "$test_python" /
+            -m pip install /
+            "$cpu_wheel" /
             "$cuda_wheel"
       - name: Verify installed wheel extensions
         shell: bash
@@ -455,13 +453,13 @@ jobs:
           set -euo pipefail
           test_python="$RUNNER_TEMP/fnlp-wheel-test/bin/python"
           cd "$RUNNER_TEMP"
-          "$test_python" </span>
-            -m pytest </span>
-            "$GITHUB_WORKSPACE/tests/test_cuda_lexical_native.py" </span>
-            "$GITHUB_WORKSPACE/tests/test_cuda_jaccard_index.py" </span>
-            "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_native.py" </span>
-            "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_public.py" </span>
-            -q </span>
+          "$test_python" /
+            -m pytest /
+            "$GITHUB_WORKSPACE/tests/test_cuda_lexical_native.py" /
+            "$GITHUB_WORKSPACE/tests/test_cuda_jaccard_index.py" /
+            "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_native.py" /
+            "$GITHUB_WORKSPACE/tests/test_cuda_vector_search_public.py" /
+            -q /
             --maxfail=1
       - name: Prepare CUDA distribution artifact
         shell: bash
@@ -469,8 +467,8 @@ jobs:
           set -euo pipefail
           rm -rf cuda-dist
           mkdir -p cuda-dist
-          cp </span>
-            build/cuda_distribution/dist/.whl </span>
+          cp /
+            build/cuda_distribution/dist/.whl /
             cuda-dist/
           ls -lh cuda-dist/
       - name: Upload CUDA companion artifact
