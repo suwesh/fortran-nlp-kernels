@@ -181,6 +181,7 @@ jobs:
       NVHPC_ROOT: /opt/nvidia/hpc_sdk/Linux_x86_64/26.9
       CUDA_ARCH: cc75
       CUDA_TOOLKIT: cuda13.3
+      NODE_OPTIONS: --dns-result-order=ipv4first
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
