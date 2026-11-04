@@ -70,7 +70,7 @@ The prebuilt CPU wheels do not require a Fortran compiler or OpenBLAS developmen
 Install the CUDA companion and its matching base package:
 
 ```bash
-python -m pip install fortran-nlp-kernels-cuda==0.1.1
+python -m pip install fortran-nlp-kernels-cuda==0.1.2
 ```
 
 The companion declares an exact dependency on:
