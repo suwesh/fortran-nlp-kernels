@@ -4,9 +4,31 @@ on:
   workflow_dispatch:
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
+  validate-cuda-runner:
+    name: Validate CUDA runner
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+      - fnlp-cuda
 
     steps:
-      - name: Validate workflow
-        run: echo "Workflow validated successfully."
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Inspect runner
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Runner: $RUNNER_NAME"
+          uname -a
+          python3.12 --version
+          g++ --version
+
+          nvidia-smi \
+            --query-gpu=name,compute_cap,driver_version,memory.total \
+            --format=csv
+
+          /opt/nvidia/hpc_sdk/Linux_x86_64/26.9/compilers/bin/nvfortran \
+            --version
