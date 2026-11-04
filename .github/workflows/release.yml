@@ -24,7 +24,7 @@ jobs:
         run: |
             set -euo pipefail
             mkdir -p dist
-            gh release download v0.1.1 --repo "$GITHUB_REPOSITORY" --pattern 'fortran_nlp_kernels_cuda-0.1.1-*.whl' --dir dist
+            gh release download v0.1.1 --repo "$GITHUB_REPOSITORY" --pattern 'fortran_nlp_kernels_cuda-0.1.1-cp312-cp312-manylinux_2_34_x86_64.whl' --dir dist
             ls -lh dist/
       - name: Publish CUDA companion
         uses: pypa/gh-action-pypi-publish@release/v1
