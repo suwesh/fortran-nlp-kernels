@@ -1,7 +1,7 @@
 project(
   'fortran-nlp-kernels',
   ['cpp', 'fortran'],
-  version: '0.1.1dev',
+  version: '0.1.1',
   meson_version: '>=1.3.0',
   default_options: [
     'cpp_std=c++17',
@@ -120,8 +120,10 @@ if get_option('fnlp_cuda')
     required: true,
   )
 
+  nvhpc_root = get_option('fnlp_nvhpc_root')
+
   nvfortran = find_program(
-    '/opt/nvidia/hpc_sdk/Linux_x86_64/26.9/compilers/bin/nvfortran',
+    join_paths(nvhpc_root, 'compilers', 'bin', 'nvfortran'),
     required: true,
   )
 
@@ -198,5 +200,10 @@ if get_option('fnlp_cuda')
     + get_option('fnlp_cuda_arch')
     + ', '
     + get_option('fnlp_cuda_toolkit')
+  )
+
+  message(
+    'NVIDIA HPC SDK root: '
+    + get_option('fnlp_nvhpc_root')
   )
 endif
