@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+_cuda = pytest.importorskip("fortran_nlp._cuda", reason="CUDA Fortran backend not installed for cpu only builds")
 
 import fortran_nlp.vector_search.flat as flat_module
 from fortran_nlp.vector_search import (

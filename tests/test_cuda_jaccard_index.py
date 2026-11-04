@@ -2,7 +2,7 @@ import pytest
 
 import fortran_nlp.lexical.index as lexical_index_module
 from fortran_nlp.lexical import JaccardIndex, JaccardResult
-
+_cuda = pytest.importorskip("fortran_nlp._cuda", reason="CUDA Fortran backend not installed for cpu only builds")
 
 CORPUS = [
     "reset the account password",
