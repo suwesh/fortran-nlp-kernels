@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 
-from fortran_nlp import _cuda
+# from fortran_nlp import _cuda
+_cuda = pytest.importorskip("fortran_nlp._cuda", reason="CUDA Fortran backend not installed for cpu only builds")
 
 
 def _single_inputs():
