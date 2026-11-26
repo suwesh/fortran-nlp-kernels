@@ -17,3 +17,6 @@ ifx -O3 -xCORE-AVX2 cpu-simd-study/benchmark_nativesgemm.f90 -o bench_nativesgem
 
 echo "Compiling native GEMM kernel with IFX and AVX512 vectorization"
 ifx -O3 -xCORE-AVX512 cpu-simd-study/benchmark_nativesgemm.f90 -o bench_nativesgemm_ifx_avx512
+
+echo "Compiling native GEMM kernel with IFX and AVX512 forced vectorization"
+ifx -O3 -xCORE-AVX512 -mprefer-vector-width=512 cpu-simd-study/benchmark_nativesgemm.f90 -o bench_nativesgemm_ifx_avx512_forced

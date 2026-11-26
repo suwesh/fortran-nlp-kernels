@@ -23,3 +23,7 @@ vtune -collect uarch-exploration -result-dir cpu-simd-study/native_sgemm_profile
 echo "Profiling native GEMM kernel with IFX and AVX512 vectorization"
 vtune -collect hotspots -result-dir cpu-simd-study/native_sgemm_profiles/ifx/avx512/ifx-avx512-hs ./bench_nativesgemm_ifx_avx512
 vtune -collect uarch-exploration -result-dir cpu-simd-study/native_sgemm_profiles/ifx/avx512/ifx-avx512-ue ./bench_nativesgemm_ifx_avx512
+
+echo "Profiling native GEMM kernel with IFX and AVX512 forced vectorization"
+vtune -collect hotspots -result-dir cpu-simd-study/native_sgemm_profiles/ifx/avx512/ifx-avx512forced-hs ./bench_nativesgemm_ifx_avx512_forced
+vtune -collect uarch-exploration -result-dir cpu-simd-study/native_sgemm_profiles/ifx/avx512/ifx-avx512forced-ue ./bench_nativesgemm_ifx_avx512_forced
