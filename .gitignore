@@ -31,5 +31,5 @@ perf_eval/data/private/
 perf_eval/data/packed/
 perf_eval/config/lexical_cpu_matrix.local.yaml
 
-cpu-simd-study/gfortran
+cpu-simd-study/*_profiles
 cpu-simd-study/ifx
