@@ -14,8 +14,12 @@ program benchmark_nativesgemm
     allocate(B(n, n))
     allocate(C(n, n))
 
-    call random_number(A)
-    call random_number(B)
+    do j = 1, n
+        do i = 1, n
+            A(i, j) = real(mod(17 * i + 13 * j, 101), real32) / 101.0_real32
+            B(i, j) = real(mod(19 * i + 11 * j, 103), real32) / 103.0_real32
+        end do
+    end do
 
     do iter = 1, niter
         C = 0.0_real32
@@ -28,5 +32,5 @@ program benchmark_nativesgemm
         end do
     end do 
 
-    print *, C(1, 1)
+    print *, sum(C)
 end program benchmark_nativesgemm

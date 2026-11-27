@@ -11,8 +11,10 @@ program benchmark_ip
 
     allocate(x(d), y(d))
 
-    call random_number(x)
-    call random_number(y)
+    do i = 1, d
+        x(i) = real(mod(17 * i, 101), real32) / 101.0_real32
+        y(i) = real(mod(19 * i, 103), real32) / 103.0_real32
+    end do
 
     do i = 1, niter
         call inner_product(x, y, sim)

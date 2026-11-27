@@ -33,3 +33,4 @@ perf_eval/config/lexical_cpu_matrix.local.yaml
 
 cpu-simd-study/*_profiles
 cpu-simd-study/ifx
+cpu-simd-study/pilot
