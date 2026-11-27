@@ -4,7 +4,7 @@ program benchmark_ip
     implicit none
 
     integer, parameter :: d = 768
-    integer, parameter :: niter = 100000000
+    integer, parameter :: niter = 10000000
     real(real32), allocatable :: x(:), y(:)
     real(real32) :: sim
     integer :: i
