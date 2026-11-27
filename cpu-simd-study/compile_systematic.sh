@@ -7,6 +7,12 @@ mkdir -p cpu-simd-study/build-modules/ifx
 mkdir -p cpu-simd-study/reports
 mkdir -p cpu-simd-study/builds
 
+echo "Removing stale compiler module files"
+rm -f fnlp_topk_core.mod
+rm -f fnlp_vector_search_core.mod
+rm -f cpu-simd-study/build-modules/gfortran/*.mod
+rm -f cpu-simd-study/build-modules/ifx/*.mod
+
 echo "=========================================="
 echo "Compiling inner-product configurations"
 echo "=========================================="
@@ -25,7 +31,7 @@ ifx -O3 -xCORE-AVX2 -module cpu-simd-study/build-modules/ifx src/native/cpu/vect
 echo "Compiling inner product with IFX AVX-512 auto width selection"
 ifx -O3 -xCORE-AVX512 -module cpu-simd-study/build-modules/ifx src/native/cpu/vector_search/topk_core.f90 src/native/cpu/vector_search/vector_search_core.f90 cpu-simd-study/benchmark_ip.f90 -o cpu-simd-study/builds/bench_ip_ifx_avx512_auto
 echo "Compiling inner product with IFX forced AVX-512 ZMM width"
-ifx -O3 -xCORE-AVX512 -mprefer-vector-width=512 -qopt-report=5 -qopt-report-phase=vec -qopt-report-file=cpu-simd-study/reports/ip-ifx-avx512-zmm.optrpt -module cpu-simd-study/build-modules/ifx src/native/cpu/vector_search/topk_core.f90 src/native/cpu/vector_search/vector_search_core.f90 cpu-simd-study/benchmark_ip.f90 -o cpu-simd-study/builds/bench_ip_ifx_avx512_zmm
+ifx -O3 -xCORE-AVX512 -mprefer-vector-width=512 -qopt-report=3 -qopt-report-phase=vec -qopt-report-file=cpu-simd-study/reports/ip-ifx-avx512-zmm.optrpt -module cpu-simd-study/build-modules/ifx src/native/cpu/vector_search/topk_core.f90 src/native/cpu/vector_search/vector_search_core.f90 cpu-simd-study/benchmark_ip.f90 -o cpu-simd-study/builds/bench_ip_ifx_avx512_zmm
 
 echo "=========================================="
 echo "Compiling native GEMM configurations"
@@ -45,7 +51,7 @@ ifx -O3 -xCORE-AVX2 -module cpu-simd-study/build-modules/ifx cpu-simd-study/benc
 echo "Compiling native GEMM with IFX AVX-512 auto width selection"
 ifx -O3 -xCORE-AVX512 -module cpu-simd-study/build-modules/ifx cpu-simd-study/benchmark_nativesgemm.f90 -o cpu-simd-study/builds/bench_nativesgemm_ifx_avx512_auto
 echo "Compiling native GEMM with IFX forced AVX-512 ZMM width"
-ifx -O3 -xCORE-AVX512 -mprefer-vector-width=512 -qopt-report=5 -qopt-report-phase=vec -qopt-report-file=cpu-simd-study/reports/nativesgemm-ifx-avx512-zmm.optrpt -module cpu-simd-study/build-modules/ifx cpu-simd-study/benchmark_nativesgemm.f90 -o cpu-simd-study/builds/bench_nativesgemm_ifx_avx512_zmm
+ifx -O3 -xCORE-AVX512 -mprefer-vector-width=512 -qopt-report=3 -qopt-report-phase=vec -qopt-report-file=cpu-simd-study/reports/nativesgemm-ifx-avx512-zmm.optrpt -module cpu-simd-study/build-modules/ifx cpu-simd-study/benchmark_nativesgemm.f90 -o cpu-simd-study/builds/bench_nativesgemm_ifx_avx512_zmm
 
 echo "=========================================="
 echo "Compilation successful, proceed for profiling with 1 unmeasured warup each"

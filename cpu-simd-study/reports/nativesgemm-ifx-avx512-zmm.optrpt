@@ -1,0 +1,121 @@
+Begin optimization report for: MAIN
+
+FUNCTION REPORT BEGIN
+    remark #15619: SLP vectorization performed on 4 operation groups in function
+FUNCTION REPORT END
+
+LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (17, 5)
+    remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+    LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (18, 9)
+        remark #15300: LOOP WAS VECTORIZED
+        remark #15305: vectorization support: vector length 32
+        remark #15389: vectorization support: unmasked unaligned unit stride store: a [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (19, 13) ] 
+        remark #15389: vectorization support: unmasked unaligned unit stride store: b [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (20, 13) ] 
+        remark #15475: --- begin vector loop cost summary ---
+        remark #15476: scalar cost: 23.000000 
+        remark #15477: vector cost: 3.046875 
+        remark #15478: estimated potential speedup: 7.500000 
+        remark #15309: vectorization support: normalized vectorization overhead 0.000000
+        remark #15570: using scalar loop trip count: 512
+        remark #15488: --- end vector loop cost summary ---
+        remark #15447: --- begin vector loop memory reference summary ---
+        remark #15451: unmasked unaligned unit stride stores: 2 
+        remark #15474: --- end vector loop memory reference summary ---
+    LOOP END
+LOOP END
+
+LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (24, 5)
+    remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+    LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (26, 9)
+        remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+        LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (27, 13)
+            remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+            LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (28, 17)
+                remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+                LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (26, 9)
+                    remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+                    LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (27, 13)
+                        remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+                        LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (28, 17)
+                            remark #15300: LOOP WAS VECTORIZED
+                            remark #15305: vectorization support: vector length 16
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: a [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: a [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: a [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride load: a [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride store: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride store: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride store: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15389: vectorization support: unmasked unaligned unit stride store: c [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (29, 21) ] 
+                            remark #15475: --- begin vector loop cost summary ---
+                            remark #15476: scalar cost: 47.000000 
+                            remark #15477: vector cost: 3.593750 
+                            remark #15478: estimated potential speedup: 13.078125 
+                            remark #15309: vectorization support: normalized vectorization overhead 0.000000
+                            remark #15570: using scalar loop trip count: 64
+                            remark #15488: --- end vector loop cost summary ---
+                            remark #15447: --- begin vector loop memory reference summary ---
+                            remark #15450: unmasked unaligned unit stride loads: 8 
+                            remark #15451: unmasked unaligned unit stride stores: 4 
+                            remark #15474: --- end vector loop memory reference summary ---
+                        LOOP END
+                    LOOP END
+                LOOP END
+            LOOP END
+        LOOP END
+    LOOP END
+LOOP END
+
+LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (35, 14)
+    remark #15541: loop was not vectorized: outer loop is not an auto-vectorization candidate.
+
+    LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (35, 14)
+        remark #15300: LOOP WAS VECTORIZED
+        remark #15305: vectorization support: vector length 16
+        remark #15399: vectorization support: unroll factor 4
+        remark #15389: vectorization support: unmasked unaligned unit stride load: [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (35, 5) ] 
+        remark #15389: vectorization support: unmasked unaligned unit stride load: [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (35, 5) ] 
+        remark #15389: vectorization support: unmasked unaligned unit stride load: [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (35, 5) ] 
+        remark #15389: vectorization support: unmasked unaligned unit stride load: [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (35, 5) ] 
+        remark #15475: --- begin vector loop cost summary ---
+        remark #15476: scalar cost: 5.000000 
+        remark #15477: vector cost: 0.406250 
+        remark #15478: estimated potential speedup: 8.000000 
+        remark #15309: vectorization support: normalized vectorization overhead 36.921875
+        remark #15488: --- end vector loop cost summary ---
+        remark #15447: --- begin vector loop memory reference summary ---
+        remark #15450: unmasked unaligned unit stride loads: 4 
+        remark #15474: --- end vector loop memory reference summary ---
+        remark #25587: Loop has reduction
+        remark #15590: vectorization support: add reduction with value type float [cpu-simd-study/benchmark_nativesgemm.f90:35:14]
+    LOOP END
+
+    LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (35, 14)
+    <Remainder loop for vectorization>
+        remark #15440: remainder loop was vectorized (masked)
+        remark #15305: vectorization support: vector length 16
+        remark #15389: vectorization support: masked unaligned unit stride load: [ /home/suwesh/Projects/fortran-nlp-kernels/cpu-simd-study/benchmark_nativesgemm.f90 (35, 5) ] 
+        remark #15475: --- begin vector loop cost summary ---
+        remark #15488: --- end vector loop cost summary ---
+        remark #15447: --- begin vector loop memory reference summary ---
+        remark #15456: masked unaligned unit stride loads: 1 
+        remark #15474: --- end vector loop memory reference summary ---
+    LOOP END
+
+    LOOP BEGIN at cpu-simd-study/benchmark_nativesgemm.f90 (35, 14)
+    <Remainder loop for vectorization>
+    LOOP END
+LOOP END
+=================================================================
+

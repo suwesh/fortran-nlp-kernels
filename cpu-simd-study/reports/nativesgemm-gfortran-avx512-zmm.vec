@@ -1,0 +1,60 @@
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: missed: couldn't vectorize loop
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: missed: not vectorized: complicated access pattern.
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: optimized: loop vectorized using 64 byte vectors
+cpu-simd-study/benchmark_nativesgemm.f90:24:13: missed: couldn't vectorize loop
+cpu-simd-study/benchmark_nativesgemm.f90:24:13: missed: not vectorized: multiple nested loops.
+cpu-simd-study/benchmark_nativesgemm.f90:26:14: missed: couldn't vectorize loop
+cpu-simd-study/benchmark_nativesgemm.f90:26:14: missed: not vectorized: multiple nested loops.
+cpu-simd-study/benchmark_nativesgemm.f90:27:18: missed: couldn't vectorize loop
+cpu-simd-study/benchmark_nativesgemm.f90:29:57: missed: not vectorized: complicated access pattern.
+cpu-simd-study/benchmark_nativesgemm.f90:28:22: optimized: loop vectorized using 64 byte vectors
+cpu-simd-study/benchmark_nativesgemm.f90:17:10: missed: couldn't vectorize loop
+cpu-simd-study/benchmark_nativesgemm.f90:19:76: missed: not vectorized: complicated access pattern.
+cpu-simd-study/benchmark_nativesgemm.f90:18:14: optimized: loop vectorized using 64 byte vectors
+cpu-simd-study/benchmark_nativesgemm.f90:1:29: note: vectorized 3 loops in function.
+cpu-simd-study/benchmark_nativesgemm.f90:13:21: missed: statement clobbers memory: _3 = __builtin_malloc (1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:14:21: missed: statement clobbers memory: _8 = __builtin_malloc (1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:15:21: missed: statement clobbers memory: _13 = __builtin_malloc (1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:25:22: missed: statement clobbers memory: __builtin_memset (_13, 0, 1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: missed: statement clobbers memory: _gfortran_st_write (&dt_parm.8);
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: missed: statement clobbers memory: _gfortran_transfer_real_write (&dt_parm.8, &D.4351, 4);
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: missed: statement clobbers memory: _gfortran_st_write_done (&dt_parm.8);
+cpu-simd-study/benchmark_nativesgemm.f90:15:21: missed: statement clobbers memory: _gfortran_os_error_at (&"In file \'cpu-simd-study/benchmark_nativesgemm.f90\', around line 16"[1]{lb: 1 sz: 1}, &"Error allocating %lu bytes"[1]{lb: 1 sz: 1}, 1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:14:21: missed: statement clobbers memory: _gfortran_os_error_at (&"In file \'cpu-simd-study/benchmark_nativesgemm.f90\', around line 15"[1]{lb: 1 sz: 1}, &"Error allocating %lu bytes"[1]{lb: 1 sz: 1}, 1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:13:21: missed: statement clobbers memory: _gfortran_os_error_at (&"In file \'cpu-simd-study/benchmark_nativesgemm.f90\', around line 14"[1]{lb: 1 sz: 1}, &"Error allocating %lu bytes"[1]{lb: 1 sz: 1}, 1048576);
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: ***** Analysis succeeded with vector mode V16SF
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: SLPing BB part
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: Costing subgraph: 
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: node 0xf1d0338 (max_nunits=2, refcnt=1) vector(2) integer(kind=4)
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: op template: dt_parm.8.common.flags = 128;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	stmt 0 dt_parm.8.common.flags = 128;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	stmt 1 dt_parm.8.common.unit = 6;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	children 0xf1d03b8
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: node (constant) 0xf1d03b8 (max_nunits=1, refcnt=1) vector(2) integer(kind=4)
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	{ 128, 6 }
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: Cost model analysis: 
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: Cost model analysis for part in loop 0:
+  Vector cost: 32
+  Scalar cost: 32
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: Basic block will be vectorized using SLP
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: Vectorizing SLP tree:
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: node 0xf1d0338 (max_nunits=2, refcnt=1) vector(2) integer(kind=4)
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: op template: dt_parm.8.common.flags = 128;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	stmt 0 dt_parm.8.common.flags = 128;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	stmt 1 dt_parm.8.common.unit = 6;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	children 0xf1d03b8
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: node (constant) 0xf1d03b8 (max_nunits=1, refcnt=1) vector(2) integer(kind=4)
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: 	{ 128, 6 }
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: ------>vectorizing SLP node starting from: dt_parm.8.common.flags = 128;
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: vect_is_simple_use: operand 6, type of def: constant
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: transform store. ncopies = 1
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: create vector_type-pointer variable to type: vector(2) integer(kind=4)  vectorizing a pointer ref: dt_parm.8.common.flags
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: created &dt_parm.8
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: add new stmt: MEM <vector(2) integer(kind=4)> [(integer(kind=4) *)&dt_parm.8] = { 128, 6 };
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: vectorizing stmts using SLP.
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: optimized: basic block part vectorized using 64 byte vectors
+cpu-simd-study/benchmark_nativesgemm.f90:35:19: note: ***** The result for vector mode V64QI would be the same
+cpu-simd-study/benchmark_nativesgemm.f90:36:33: missed: statement clobbers memory: _gfortran_set_args (argc_2(D), argv_3(D));
+cpu-simd-study/benchmark_nativesgemm.f90:36:33: missed: statement clobbers memory: _gfortran_set_options (7, &options.12[0]);
+cpu-simd-study/benchmark_nativesgemm.f90:36:33: missed: statement clobbers memory: benchmark_nativesgemm ();
+cpu-simd-study/benchmark_nativesgemm.f90:36:33: note: ***** Analysis failed with vector mode VOID
