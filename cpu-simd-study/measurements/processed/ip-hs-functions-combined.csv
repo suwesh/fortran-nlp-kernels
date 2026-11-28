@@ -1,0 +1,17 @@
+compiler,configuration,source_file,Function	CPU Time	CPU Time:Effective Time	CPU Time:Spin Time	CPU Time:Overhead Time	Module	Function (Full)	Source File	Start Address
+gfortran,scalar,ip-gfortran-scalar-hs-functions.csv,__fnlp_vector_search_core_MOD_inner_product	76.331386	76.331386	0.0	0.0	bench_ip_gfortran_scalar	__fnlp_vector_search_core_MOD_inner_product	[Unknown]	0x2310
+gfortran,scalar,ip-gfortran-scalar-hs-functions.csv,MAIN__	0.083671	0.083671	0.0	0.0	bench_ip_gfortran_scalar	MAIN__	[Unknown]	0x2500
+gfortran,avx2,ip-gfortran-avx2-hs-functions.csv,__fnlp_vector_search_core_MOD_inner_product	84.807817	84.807817	0.0	0.0	bench_ip_gfortran_avx2	__fnlp_vector_search_core_MOD_inner_product	[Unknown]	0x2610
+gfortran,avx2,ip-gfortran-avx2-hs-functions.csv,MAIN__	0.031706	0.031706	0.0	0.0	bench_ip_gfortran_avx2	MAIN__	[Unknown]	0x2a40
+gfortran,avx2,ip-gfortran-avx2-hs-functions.csv,__register_frame_info_bases	0.009367	0.009367	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-hs-functions.csv,__fnlp_vector_search_core_MOD_inner_product	86.709949	86.709949	0.0	0.0	bench_ip_gfortran_avx512_zmm	__fnlp_vector_search_core_MOD_inner_product	[Unknown]	0x27f0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-hs-functions.csv,MAIN__	0.053619	0.053619	0.0	0.0	bench_ip_gfortran_avx512_zmm	MAIN__	[Unknown]	0x2e20
+ifx,scalar,ip-ifx-scalar-hs-functions.csv,fnlp_vector_search_core_mp_inner_product_	59.487860	59.487860	0.0	0.0	bench_ip_ifx_scalar	fnlp_vector_search_core_mp_inner_product_	[Unknown]	0x405eb0
+ifx,scalar,ip-ifx-scalar-hs-functions.csv,MAIN__	0.020058	0.020058	0.0	0.0	bench_ip_ifx_scalar	MAIN__	[Unknown]	0x408550
+ifx,scalar,ip-ifx-scalar-hs-functions.csv,pthread_mutex_init	0.012183	0.012183	0.0	0.0	libc.so.6	pthread_mutex_init	[Unknown]	0x9f7d0
+ifx,avx2,ip-ifx-avx2-hs-functions.csv,fnlp_vector_search_core_mp_inner_product_	5.368894	5.368894	0.0	0.0	bench_ip_ifx_avx2	fnlp_vector_search_core_mp_inner_product_	[Unknown]	0x406cf0
+ifx,avx2,ip-ifx-avx2-hs-functions.csv,__register_frame_info_bases	0.009702	0.009702	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+ifx,avx512-auto,ip-ifx-avx512-auto-hs-functions.csv,fnlp_vector_search_core_mp_inner_product_	4.829859	4.829859	0.0	0.0	bench_ip_ifx_avx512_auto	fnlp_vector_search_core_mp_inner_product_	[Unknown]	0x406c10
+ifx,avx512-auto,ip-ifx-avx512-auto-hs-functions.csv,MAIN__	0.039936	0.039936	0.0	0.0	bench_ip_ifx_avx512_auto	MAIN__	[Unknown]	0x40b8b0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-hs-functions.csv,fnlp_vector_search_core_mp_inner_product	4.247774	4.247774	0.0	0.0	bench_ip_ifx_avx512_zmm	fnlp_vector_search_core_mp_inner_product	vector_search_core.f90	0x407110
+ifx,avx512-zmm,ip-ifx-avx512-zmm-hs-functions.csv,MAIN_	0.011810	0.011810	0.0	0.0	bench_ip_ifx_avx512_zmm	MAIN_	benchmark_ip.f90	0x40d170

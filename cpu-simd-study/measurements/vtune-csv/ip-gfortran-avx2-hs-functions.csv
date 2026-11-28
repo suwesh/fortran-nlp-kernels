@@ -1,0 +1,4 @@
+Function	CPU Time	CPU Time:Effective Time	CPU Time:Spin Time	CPU Time:Overhead Time	Module	Function (Full)	Source File	Start Address
+__fnlp_vector_search_core_MOD_inner_product	84.807817	84.807817	0.0	0.0	bench_ip_gfortran_avx2	__fnlp_vector_search_core_MOD_inner_product	[Unknown]	0x2610
+MAIN__	0.031706	0.031706	0.0	0.0	bench_ip_gfortran_avx2	MAIN__	[Unknown]	0x2a40
+__register_frame_info_bases	0.009367	0.009367	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70

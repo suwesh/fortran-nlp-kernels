@@ -1,0 +1,15 @@
+kernel,compiler,configuration,output
+inner_product,ifx,avx512-zmm,188.0200
+inner_product,ifx,avx2,188.0200
+inner_product,ifx,avx512-auto,188.0200
+inner_product,ifx,scalar,188.0199
+inner_product,gfortran,avx2,188.019897
+inner_product,gfortran,avx512-zmm,188.019897
+inner_product,gfortran,scalar,188.019897
+native_sgemm,ifx,avx512-zmm,3.2900122E+07
+native_sgemm,ifx,avx512-auto,3.2900122E+07
+native_sgemm,ifx,avx2,3.2900122E+07
+native_sgemm,gfortran,avx512-zmm,32911558.0
+native_sgemm,gfortran,avx2,32911558.0
+native_sgemm,gfortran,scalar,32911558.0
+native_sgemm,ifx,scalar,3.2911558E+07

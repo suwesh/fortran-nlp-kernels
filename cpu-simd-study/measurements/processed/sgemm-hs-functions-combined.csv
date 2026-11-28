@@ -1,0 +1,24 @@
+compiler,configuration,source_file,Function	CPU Time	CPU Time:Effective Time	CPU Time:Spin Time	CPU Time:Overhead Time	Module	Function (Full)	Source File	Start Address
+gfortran,scalar,sgemm-gfortran-scalar-hs-functions.csv,MAIN__	32.127057	32.127057	0.0	0.0	bench_nativesgemm_gfortran_scalar	MAIN__	[Unknown]	0x11e0
+gfortran,scalar,sgemm-gfortran-scalar-hs-functions.csv,func@0x1996c0	0.028073	0.028073	0.0	0.0	libc.so.6	func@0x1996c0	[Unknown]	0x1996c0
+gfortran,scalar,sgemm-gfortran-scalar-hs-functions.csv,__register_frame_info_bases	0.010296	0.010296	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+gfortran,avx2,sgemm-gfortran-avx2-hs-functions.csv,MAIN__	11.017832	11.017832	0.0	0.0	bench_nativesgemm_gfortran_avx2	MAIN__	[Unknown]	0x11e0
+gfortran,avx2,sgemm-gfortran-avx2-hs-functions.csv,func@0x1996c0	0.019736	0.019736	0.0	0.0	libc.so.6	func@0x1996c0	[Unknown]	0x1996c0
+gfortran,avx2,sgemm-gfortran-avx2-hs-functions.csv,__register_frame_info_bases	0.010733	0.010733	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+gfortran,avx512-zmm,sgemm-gfortran-avx512-zmm-hs-functions.csv,MAIN__	10.350351	10.350351	0.0	0.0	bench_nativesgemm_gfortran_avx512_zmm	MAIN__	[Unknown]	0x11e0
+gfortran,avx512-zmm,sgemm-gfortran-avx512-zmm-hs-functions.csv,func@0x1996c0	0.028258	0.028258	0.0	0.0	libc.so.6	func@0x1996c0	[Unknown]	0x1996c0
+gfortran,avx512-zmm,sgemm-gfortran-avx512-zmm-hs-functions.csv,__register_frame_info_bases	0.010909	0.010909	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+ifx,scalar,sgemm-ifx-scalar-hs-functions.csv,MAIN__	45.731800	45.731800	0.0	0.0	bench_nativesgemm_ifx_scalar	MAIN__	[Unknown]	0x405230
+ifx,scalar,sgemm-ifx-scalar-hs-functions.csv,__intel_avx_rep_memset	0.041510	0.041510	0.0	0.0	bench_nativesgemm_ifx_scalar	__intel_avx_rep_memset	[Unknown]	0x45fe60
+ifx,scalar,sgemm-ifx-scalar-hs-functions.csv,__register_frame_info_bases	0.023774	0.023774	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+ifx,scalar,sgemm-ifx-scalar-hs-functions.csv,__register_frame	0.008050	0.008050	0.0	0.0	libgcc_s.so.1	__register_frame	[Unknown]	0x25f00
+ifx,avx2,sgemm-ifx-avx2-hs-functions.csv,MAIN__	3.641129	3.641129	0.0	0.0	bench_nativesgemm_ifx_avx2	MAIN__	[Unknown]	0x405230
+ifx,avx2,sgemm-ifx-avx2-hs-functions.csv,__intel_avx_rep_memset	0.015989	0.015989	0.0	0.0	bench_nativesgemm_ifx_avx2	__intel_avx_rep_memset	[Unknown]	0x45ffb0
+ifx,avx2,sgemm-ifx-avx2-hs-functions.csv,__register_frame_info_bases	0.009665	0.009665	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+ifx,avx512-auto,sgemm-ifx-avx512-auto-hs-functions.csv,MAIN__	3.402055	3.402055	0.0	0.0	bench_nativesgemm_ifx_avx512_auto	MAIN__	[Unknown]	0x405240
+ifx,avx512-auto,sgemm-ifx-avx512-auto-hs-functions.csv,__intel_avx_rep_memset	0.036079	0.036079	0.0	0.0	bench_nativesgemm_ifx_avx512_auto	__intel_avx_rep_memset	[Unknown]	0x45ffd0
+ifx,avx512-zmm,sgemm-ifx-avx512-zmm-hs-functions.csv,MAIN_	3.464227	3.464227	0.0	0.0	bench_nativesgemm_ifx_avx512_zmm	MAIN_	benchmark_nativesgemm.f90	0x405240
+ifx,avx512-zmm,sgemm-ifx-avx512-zmm-hs-functions.csv,__register_frame_info_bases	0.021519	0.021519	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+ifx,avx512-zmm,sgemm-ifx-avx512-zmm-hs-functions.csv,_intel_fast_memset	0.012015	0.012015	0.0	0.0	bench_nativesgemm_ifx_avx512_zmm	_intel_fast_memset	[Unknown]	0x455de0
+ifx,avx512-zmm,sgemm-ifx-avx512-zmm-hs-functions.csv,__intel_avx_rep_memset	0.011684	0.011684	0.0	0.0	bench_nativesgemm_ifx_avx512_zmm	__intel_avx_rep_memset	[Unknown]	0x460210
+ifx,avx512-zmm,sgemm-ifx-avx512-zmm-hs-functions.csv,for_write_seq_lis_xmit	0.010000	0.010000	0.0	0.0	bench_nativesgemm_ifx_avx512_zmm	for_write_seq_lis_xmit	[Unknown]	0x40ca20

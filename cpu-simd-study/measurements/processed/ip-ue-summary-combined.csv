@@ -1,0 +1,890 @@
+compiler,configuration,source_file,Hierarchy Level	Metric Name	Metric Value
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,0	Elapsed Time	87.625371
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Clockticks	294813600000
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Instructions Retired	451226400000
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	CPI Rate	0.653361
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Retiring	27.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Light Operations	25.9
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	FP Arithmetic	40.7
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	FP x87	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	FP Scalar	40.7
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	FP Vector	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	128-bit FP Vector	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	256-bit FP Vector	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	512-bit FP Vector	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Memory Operations	8.9
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Branch Instructions	5.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Other	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Nop Instructions	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Heavy Operations	1.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Few Uops Instructions	1.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Microcode Sequencer	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Assists	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	FP Assists	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	CISC	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Front-End Bound	0.8
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Front-End Latency	0.7
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	ICache Misses	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Code L2 Hit	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Code L2 Miss	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	ITLB Misses	0.3
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Code STLB Hit	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Code STLB Miss	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Code STLB Miss 4K	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Code STLB Miss 2M	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Branch Resteers	0.4
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Mispredicts Resteers	0.3
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Clears Resteers	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Unknown Branches	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	MS Switches	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Length Changing Prefixes	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	DSB Switches	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Front-End Bandwidth	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Decoder-0 Alone	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	%MITE_4wide	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Front-End Bandwidth DSB	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Front-End Bandwidth LSD	6.5
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	MS	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	(Info) DSB Coverage	9.5
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	(Info) LSD Coverage	46.5
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	(Info) DSB Misses	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Bad Speculation	0.4
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Branch Mispredict	0.4
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Other Mispredicts	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Machine Clears	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Other Nukes	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Back-End Bound	71.8
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Memory Bound	16.9
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	L1 Bound	14.4
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	DTLB Overhead	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Load STLB Hit	0.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Load STLB Miss	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Load STLB Miss 4K	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Load STLB Miss 2M	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Load STLB Miss 1G	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	L1 Latency Dependency	21.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Lock Latency	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Split Loads	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	4K Aliasing	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	FB Full	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	L2 Bound	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	L2 Hit Latency	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	L3 Bound	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	L3 Latency	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	SQ Full	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	DRAM Bound	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Memory Bandwidth	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Memory Latency	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Store Bound	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Store Latency	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Split Stores	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	DTLB Store Overhead	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Store STLB Hit	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Store STLB Miss	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Store STLB Miss 4K	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Store STLB Miss 2M	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Store STLB Miss 1G	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Core Bound	54.9
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Divider	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	FP Divider	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	INT Divider	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Serializing Operations	0.3
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Slow Pause	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Port Utilization	46.5
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Cycles of 0 Ports Utilized	5.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Mixing Vectors	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Cycles of 1 Port Utilized	33.8
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Cycles of 2 Ports Utilized	28.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Cycles of 3+ Ports Utilized	20.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	ALU Operation Utilization	26.8
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Port 0	24.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Port 1	28.3
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Port 5	21.5
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,6	Port 6	33.3
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Load Operation Utilization	27.6
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,5	Store Operation Utilization	0.1
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,4	Vector Capacity Usage (FPU)	6.2
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Average CPU Frequency	3697839834.629847
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Total Thread Count	3
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Paused Time	0.0
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,0	Effective Physical Core Utilization	22.0% (0.881 out of 4)
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Effective Logical Core Utilization	11.4% (0.910 out of 8)
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,0	Collection and Platform Info	
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_gfortran_scalar" 
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Computer Name	SUWESH51135G7
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Result Size	102995477
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Collection start time	03:00:39 28/11/2026 UTC
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Collection stop time	03:02:06 28/11/2026 UTC
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,1	CPU	
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Frequency	2419208887
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Logical CPU Count	8
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,2	Cache Allocation Technology	
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Level 2 capability	not detected
+gfortran,scalar,ip-gfortran-scalar-ue-summary.csv,3	Level 3 capability	not detected
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,0	Elapsed Time	109.284742
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Clockticks	193080000000
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Instructions Retired	176004000000
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	CPI Rate	1.097021
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Retiring	20.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Light Operations	19.3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	FP Arithmetic	50.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	FP x87	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	FP Scalar	44.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	FP Vector	6.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	128-bit FP Vector	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	256-bit FP Vector	6.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	512-bit FP Vector	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Memory Operations	2.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Branch Instructions	1.3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Other	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Nop Instructions	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Heavy Operations	1.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Few Uops Instructions	0.8
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Microcode Sequencer	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Assists	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	FP Assists	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	CISC	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Front-End Bound	2.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Front-End Latency	2.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	ICache Misses	1.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Code L2 Hit	0.3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Code L2 Miss	0.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	ITLB Misses	1.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Code STLB Hit	0.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Code STLB Miss	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Code STLB Miss 4K	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Code STLB Miss 2M	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Branch Resteers	1.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Mispredicts Resteers	0.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Clears Resteers	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Unknown Branches	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	MS Switches	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Length Changing Prefixes	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	DSB Switches	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Front-End Bandwidth	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Decoder-0 Alone	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	%MITE_4wide	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Front-End Bandwidth DSB	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Front-End Bandwidth LSD	4.5
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	MS	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	(Info) DSB Coverage	25.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	(Info) LSD Coverage	46.3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	(Info) DSB Misses	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Bad Speculation	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Branch Mispredict	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Other Mispredicts	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Machine Clears	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Other Nukes	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Back-End Bound	96.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Memory Bound	27.3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	L1 Bound	32.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	DTLB Overhead	0.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Load STLB Hit	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Load STLB Miss	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Load STLB Miss 4K	0.4
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Load STLB Miss 2M	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Load STLB Miss 1G	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	L1 Latency Dependency	5.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Lock Latency	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Split Loads	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	4K Aliasing	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	FB Full	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	L2 Bound	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	L2 Hit Latency	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	L3 Bound	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	L3 Latency	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	SQ Full	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	DRAM Bound	0.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Memory Bandwidth	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Memory Latency	0.7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Store Bound	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Store Latency	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Split Stores	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	DTLB Store Overhead	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Store STLB Hit	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Store STLB Miss	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Store STLB Miss 4K	0.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Store STLB Miss 2M	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Store STLB Miss 1G	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Core Bound	68.9
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Divider	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	FP Divider	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	INT Divider	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Serializing Operations	0.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Slow Pause	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Port Utilization	100.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Cycles of 0 Ports Utilized	48.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Mixing Vectors	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Cycles of 1 Port Utilized	65.8
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Cycles of 2 Ports Utilized	15.3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Cycles of 3+ Ports Utilized	7.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	ALU Operation Utilization	23.8
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Port 0	21.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Port 1	26.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Port 5	40.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,6	Port 6	7.5
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Load Operation Utilization	5.6
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,5	Store Operation Utilization	0.2
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,4	Vector Capacity Usage (FPU)	11.1
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Average CPU Frequency	2413658515.483351
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Total Thread Count	3
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Paused Time	0.0
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,0	Effective Physical Core Utilization	20.9% (0.837 out of 4)
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Effective Logical Core Utilization	9.1% (0.732 out of 8)
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,0	Collection and Platform Info	
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_gfortran_avx2" 
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Computer Name	SUWESH51135G7
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Result Size	67625755
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Collection start time	03:06:58 28/11/2026 UTC
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Collection stop time	03:08:47 28/11/2026 UTC
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,1	CPU	
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Frequency	2419208880
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Logical CPU Count	8
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,2	Cache Allocation Technology	
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Level 2 capability	not detected
+gfortran,avx2,ip-gfortran-avx2-ue-summary.csv,3	Level 3 capability	not detected
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,0	Elapsed Time	111.987705
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Clockticks	198943200000
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Instructions Retired	164637600000
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	CPI Rate	1.208370
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Retiring	19.8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Light Operations	18.8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	FP Arithmetic	47.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	FP x87	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	FP Scalar	44.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	FP Vector	3.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	128-bit FP Vector	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	256-bit FP Vector	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	512-bit FP Vector	3.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Memory Operations	1.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Branch Instructions	0.7
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Other	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Nop Instructions	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Heavy Operations	1.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Few Uops Instructions	0.8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Microcode Sequencer	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Assists	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	FP Assists	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	CISC	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Front-End Bound	2.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Front-End Latency	1.8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	ICache Misses	0.9
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Code L2 Hit	0.3
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Code L2 Miss	0.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	ITLB Misses	1.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Code STLB Hit	0.7
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Code STLB Miss	0.4
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Code STLB Miss 4K	0.4
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Code STLB Miss 2M	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Branch Resteers	1.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Mispredicts Resteers	0.7
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Clears Resteers	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Unknown Branches	0.4
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	MS Switches	0.4
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Length Changing Prefixes	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	DSB Switches	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Front-End Bandwidth	0.8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Decoder-0 Alone	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	%MITE_4wide	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Front-End Bandwidth DSB	0.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Front-End Bandwidth LSD	4.4
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	MS	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	(Info) DSB Coverage	32.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	(Info) LSD Coverage	40.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	(Info) DSB Misses	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Bad Speculation	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Branch Mispredict	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Other Mispredicts	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Machine Clears	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Other Nukes	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Back-End Bound	95.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Memory Bound	20.3
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	L1 Bound	23.9
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	DTLB Overhead	0.5
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Load STLB Hit	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Load STLB Miss	0.3
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Load STLB Miss 4K	0.3
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Load STLB Miss 2M	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Load STLB Miss 1G	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	L1 Latency Dependency	2.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Lock Latency	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Split Loads	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	4K Aliasing	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	FB Full	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	L2 Bound	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	L2 Hit Latency	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	L3 Bound	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	L3 Latency	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	SQ Full	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	DRAM Bound	0.5
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Memory Bandwidth	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Memory Latency	0.5
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Store Bound	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Store Latency	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Split Stores	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	DTLB Store Overhead	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Store STLB Hit	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Store STLB Miss	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Store STLB Miss 4K	0.1
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Store STLB Miss 2M	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Store STLB Miss 1G	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Core Bound	75.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Divider	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	FP Divider	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	INT Divider	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Serializing Operations	0.6
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Slow Pause	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Port Utilization	100.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Cycles of 0 Ports Utilized	49.7
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Mixing Vectors	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Cycles of 1 Port Utilized	63.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Cycles of 2 Ports Utilized	15.7
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Cycles of 3+ Ports Utilized	5.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	ALU Operation Utilization	21.5
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Port 0	34.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Port 1	5.4
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Port 5	40.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,6	Port 6	6.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Load Operation Utilization	3.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,5	Store Operation Utilization	0.2
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,4	Vector Capacity Usage (FPU)	11.8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Average CPU Frequency	2410224293.765054
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Total Thread Count	3
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Paused Time	0.0
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,0	Effective Physical Core Utilization	21.1% (0.845 out of 4)
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Effective Logical Core Utilization	9.2% (0.737 out of 8)
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,0	Collection and Platform Info	
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_gfortran_avx512_zmm" 
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Computer Name	SUWESH51135G7
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Result Size	66299671
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Collection start time	03:13:27 28/11/2026 UTC
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Collection stop time	03:15:19 28/11/2026 UTC
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,1	CPU	
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Frequency	2419208880
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Logical CPU Count	8
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,2	Cache Allocation Technology	
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Level 2 capability	not detected
+gfortran,avx512-zmm,ip-gfortran-avx512-zmm-ue-summary.csv,3	Level 3 capability	not detected
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,0	Elapsed Time	85.565260
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Clockticks	133663200000
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Instructions Retired	141364800000
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	CPI Rate	0.945520
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Retiring	22.8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Light Operations	21.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	FP Arithmetic	49.7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	FP x87	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	FP Scalar	49.7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	FP Vector	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	128-bit FP Vector	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	256-bit FP Vector	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	512-bit FP Vector	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Memory Operations	10.7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Branch Instructions	1.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Other	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Nop Instructions	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Heavy Operations	0.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Few Uops Instructions	0.7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Microcode Sequencer	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Assists	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	FP Assists	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	CISC	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Front-End Bound	2.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Front-End Latency	1.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	ICache Misses	0.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Code L2 Hit	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Code L2 Miss	0.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	ITLB Misses	0.6
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Code STLB Hit	0.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Code STLB Miss	0.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Code STLB Miss 4K	0.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Code STLB Miss 2M	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Branch Resteers	1.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Mispredicts Resteers	0.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Clears Resteers	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Unknown Branches	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	MS Switches	0.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Length Changing Prefixes	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	DSB Switches	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Front-End Bandwidth	1.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Decoder-0 Alone	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	%MITE_4wide	0.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Front-End Bandwidth DSB	0.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Front-End Bandwidth LSD	16.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	MS	0.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	(Info) DSB Coverage	46.6
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	(Info) LSD Coverage	49.6
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	(Info) DSB Misses	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Bad Speculation	0.6
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Branch Mispredict	0.6
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Other Mispredicts	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Machine Clears	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Other Nukes	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Back-End Bound	73.7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Memory Bound	15.8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	L1 Bound	14.8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	DTLB Overhead	0.6
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Load STLB Hit	0.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Load STLB Miss	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Load STLB Miss 4K	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Load STLB Miss 2M	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Load STLB Miss 1G	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	L1 Latency Dependency	20.8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Lock Latency	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Split Loads	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	4K Aliasing	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	FB Full	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	L2 Bound	0.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	L2 Hit Latency	0.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	L3 Bound	0.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	L3 Latency	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	SQ Full	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	DRAM Bound	0.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Memory Bandwidth	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Memory Latency	0.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Store Bound	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Store Latency	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Split Stores	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	DTLB Store Overhead	0.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Store STLB Hit	0.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Store STLB Miss	0.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Store STLB Miss 4K	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Store STLB Miss 2M	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Store STLB Miss 1G	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Core Bound	58.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Divider	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	FP Divider	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	INT Divider	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Serializing Operations	0.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Slow Pause	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Port Utilization	55.9
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Cycles of 0 Ports Utilized	4.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Mixing Vectors	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Cycles of 1 Port Utilized	45.4
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Cycles of 2 Ports Utilized	27.8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Cycles of 3+ Ports Utilized	71.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	ALU Operation Utilization	59.8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Port 0	55.7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Port 1	69.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Port 5	52.1
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,6	Port 6	62.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Load Operation Utilization	46.3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,5	Store Operation Utilization	0.5
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,4	Vector Capacity Usage (FPU)	6.2
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Average CPU Frequency	2323503548.471657
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Total Thread Count	3
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Paused Time	0.0
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,0	Effective Physical Core Utilization	17.6% (0.706 out of 4)
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Effective Logical Core Utilization	8.4% (0.672 out of 8)
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,0	Collection and Platform Info	
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_ifx_scalar" 
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Computer Name	SUWESH51135G7
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Result Size	50396546
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Collection start time	03:19:20 28/11/2026 UTC
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Collection stop time	03:20:45 28/11/2026 UTC
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,1	CPU	
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Frequency	2419208882
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Logical CPU Count	8
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,2	Cache Allocation Technology	
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Level 2 capability	not detected
+ifx,scalar,ip-ifx-scalar-ue-summary.csv,3	Level 3 capability	not detected
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,0	Elapsed Time	5.286107
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Clockticks	9295200000
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Instructions Retired	9381600000
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	CPI Rate	0.990790
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Retiring	20.7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Light Operations	20.5
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	FP Arithmetic	57.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	FP x87	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	FP Scalar	1.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	FP Vector	55.7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	128-bit FP Vector	2.5
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	256-bit FP Vector	100.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	512-bit FP Vector	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Memory Operations	9.8
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Branch Instructions	4.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Other	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Nop Instructions	0.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Heavy Operations	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Few Uops Instructions	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Microcode Sequencer	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Assists	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	FP Assists	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	CISC	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Front-End Bound	6.1
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Front-End Latency	1.4
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	ICache Misses	0.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Code L2 Hit	0.4
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Code L2 Miss	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	ITLB Misses	0.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Code STLB Hit	0.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Code STLB Miss	0.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Code STLB Miss 4K	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Code STLB Miss 2M	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Branch Resteers	0.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Mispredicts Resteers	0.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Clears Resteers	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Unknown Branches	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	MS Switches	0.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Length Changing Prefixes	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	DSB Switches	0.1
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Front-End Bandwidth	4.7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Decoder-0 Alone	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	%MITE_4wide	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Front-End Bandwidth DSB	10.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Front-End Bandwidth LSD	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	MS	0.1
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	(Info) DSB Coverage	100.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	(Info) LSD Coverage	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	(Info) DSB Misses	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Bad Speculation	39.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Branch Mispredict	39.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Other Mispredicts	
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Machine Clears	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Other Nukes	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Back-End Bound	33.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Memory Bound	7.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	L1 Bound	4.7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	DTLB Overhead	0.4
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Load STLB Hit	0.1
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Load STLB Miss	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Load STLB Miss 4K	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Load STLB Miss 2M	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Load STLB Miss 1G	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	L1 Latency Dependency	21.5
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Lock Latency	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Split Loads	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	4K Aliasing	5.3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	FB Full	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	L2 Bound	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	L2 Hit Latency	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	L3 Bound	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	L3 Latency	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	SQ Full	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	DRAM Bound	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Memory Bandwidth	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Memory Latency	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Store Bound	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Store Latency	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Split Stores	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	DTLB Store Overhead	0.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Store STLB Hit	0.1
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Store STLB Miss	0.1
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Store STLB Miss 4K	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Store STLB Miss 2M	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Store STLB Miss 1G	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Core Bound	26.4
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Divider	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	FP Divider	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	INT Divider	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Serializing Operations	0.5
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Slow Pause	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Port Utilization	18.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Cycles of 0 Ports Utilized	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Mixing Vectors	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Cycles of 1 Port Utilized	15.5
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Cycles of 2 Ports Utilized	15.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Cycles of 3+ Ports Utilized	90.7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	ALU Operation Utilization	47.9
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Port 0	53.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Port 1	62.2
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Port 5	23.7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,6	Port 6	52.6
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Load Operation Utilization	43.5
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,5	Store Operation Utilization	4.4
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,4	Vector Capacity Usage (FPU)	49.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Average CPU Frequency	2404309981.040031
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Total Thread Count	3
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Paused Time	0.0
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,0	Effective Physical Core Utilization	20.1% (0.803 out of 4)
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Effective Logical Core Utilization	9.1% (0.731 out of 8)
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,0	Collection and Platform Info	
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_ifx_avx2" 
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Computer Name	SUWESH51135G7
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Result Size	7814688
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Collection start time	03:21:22 28/11/2026 UTC
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Collection stop time	03:21:27 28/11/2026 UTC
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,1	CPU	
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Frequency	2419208881
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Logical CPU Count	8
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,2	Cache Allocation Technology	
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Level 2 capability	not detected
+ifx,avx2,ip-ifx-avx2-ue-summary.csv,3	Level 3 capability	not detected
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,0	Elapsed Time	5.153332
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Clockticks	9002400000
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Instructions Retired	9091200000
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	CPI Rate	0.990232
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Retiring	21.7
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Light Operations	21.6
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	FP Arithmetic	51.7
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	FP x87	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	FP Scalar	1.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	FP Vector	50.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	128-bit FP Vector	2.9
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	256-bit FP Vector	100.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	512-bit FP Vector	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Memory Operations	10.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Branch Instructions	4.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Other	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Nop Instructions	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Heavy Operations	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Few Uops Instructions	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Microcode Sequencer	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Assists	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	FP Assists	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	CISC	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Front-End Bound	5.8
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Front-End Latency	1.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	ICache Misses	0.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Code L2 Hit	0.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Code L2 Miss	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	ITLB Misses	0.5
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Code STLB Hit	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Code STLB Miss	0.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Code STLB Miss 4K	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Code STLB Miss 2M	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Branch Resteers	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Mispredicts Resteers	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Clears Resteers	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Unknown Branches	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	MS Switches	0.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Length Changing Prefixes	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	DSB Switches	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Front-End Bandwidth	4.5
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Decoder-0 Alone	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	%MITE_4wide	0.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Front-End Bandwidth DSB	8.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Front-End Bandwidth LSD	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	MS	0.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	(Info) DSB Coverage	95.8
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	(Info) LSD Coverage	0.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	(Info) DSB Misses	0.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Bad Speculation	40.5
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Branch Mispredict	40.5
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Other Mispredicts	
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Machine Clears	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Other Nukes	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Back-End Bound	32.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Memory Bound	7.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	L1 Bound	5.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	DTLB Overhead	0.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Load STLB Hit	0.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Load STLB Miss	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Load STLB Miss 4K	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Load STLB Miss 2M	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Load STLB Miss 1G	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	L1 Latency Dependency	19.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Lock Latency	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Split Loads	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	4K Aliasing	4.9
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	FB Full	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	L2 Bound	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	L2 Hit Latency	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	L3 Bound	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	L3 Latency	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	SQ Full	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	DRAM Bound	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Memory Bandwidth	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Memory Latency	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Store Bound	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Store Latency	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Split Stores	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	DTLB Store Overhead	0.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Store STLB Hit	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Store STLB Miss	0.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Store STLB Miss 4K	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Store STLB Miss 2M	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Store STLB Miss 1G	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Core Bound	24.6
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Divider	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	FP Divider	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	INT Divider	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Serializing Operations	0.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Slow Pause	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Port Utilization	16.5
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Cycles of 0 Ports Utilized	0.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Mixing Vectors	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Cycles of 1 Port Utilized	12.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Cycles of 2 Ports Utilized	19.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Cycles of 3+ Ports Utilized	83.5
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	ALU Operation Utilization	47.3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Port 0	51.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Port 1	61.7
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Port 5	25.2
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,6	Port 6	51.1
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Load Operation Utilization	42.6
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,5	Store Operation Utilization	3.4
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,4	Vector Capacity Usage (FPU)	48.9
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Average CPU Frequency	2407655239.825949
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Total Thread Count	3
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Paused Time	0.0
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,0	Effective Physical Core Utilization	20.6% (0.825 out of 4)
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Effective Logical Core Utilization	9.1% (0.726 out of 8)
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,0	Collection and Platform Info	
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_ifx_avx512_auto" 
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Computer Name	SUWESH51135G7
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Result Size	7781996
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Collection start time	03:21:57 28/11/2026 UTC
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Collection stop time	03:22:02 28/11/2026 UTC
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,1	CPU	
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Frequency	2419208904
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Logical CPU Count	8
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,2	Cache Allocation Technology	
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Level 2 capability	not detected
+ifx,avx512-auto,ip-ifx-avx512-auto-ue-summary.csv,3	Level 3 capability	not detected
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,0	Elapsed Time	4.038799
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Clockticks	7185600000
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Instructions Retired	7221600000
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	CPI Rate	0.995015
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Retiring	20.8
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Light Operations	20.6
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	FP Arithmetic	51.6
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	FP x87	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	FP Scalar	1.6
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	FP Vector	50.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	128-bit FP Vector	3.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	256-bit FP Vector	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	512-bit FP Vector	99.5
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Memory Operations	9.6
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Branch Instructions	4.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Other	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Nop Instructions	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Heavy Operations	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Few Uops Instructions	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Microcode Sequencer	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Assists	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	FP Assists	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	CISC	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Front-End Bound	6.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Front-End Latency	1.6
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	ICache Misses	0.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Code L2 Hit	0.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Code L2 Miss	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	ITLB Misses	0.5
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Code STLB Hit	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Code STLB Miss	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Code STLB Miss 4K	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Code STLB Miss 2M	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Branch Resteers	0.5
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Mispredicts Resteers	0.5
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Clears Resteers	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Unknown Branches	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	MS Switches	0.3
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Length Changing Prefixes	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	DSB Switches	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Front-End Bandwidth	4.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Front-End Bandwidth MITE	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Decoder-0 Alone	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	%MITE_4wide	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Front-End Bandwidth DSB	6.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Front-End Bandwidth LSD	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	MS	0.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	(Info) DSB Coverage	100.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	(Info) LSD Coverage	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	(Info) DSB Misses	0.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Bad Speculation	26.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Branch Mispredict	26.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Other Mispredicts	
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Machine Clears	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Other Nukes	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Back-End Bound	47.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Memory Bound	15.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	L1 Bound	15.9
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	DTLB Overhead	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Load STLB Hit	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Load STLB Miss	0.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Load STLB Miss 4K	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Load STLB Miss 2M	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Load STLB Miss 1G	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Loads Blocked by Store Forwarding	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	L1 Latency Dependency	19.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Lock Latency	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Split Loads	100.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	4K Aliasing	4.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	FB Full	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	L2 Bound	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	L2 Hit Latency	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	L3 Bound	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	L3 Latency	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	SQ Full	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	DRAM Bound	0.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Memory Bandwidth	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Memory Latency	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Store Bound	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Store Latency	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Split Stores	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	DTLB Store Overhead	0.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Store STLB Hit	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Store STLB Miss	0.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Store STLB Miss 4K	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Store STLB Miss 2M	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Store STLB Miss 1G	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Core Bound	31.9
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Divider	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	FP Divider	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	INT Divider	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Serializing Operations	0.3
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Slow Pause	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Port Utilization	33.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Cycles of 0 Ports Utilized	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Mixing Vectors	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Cycles of 1 Port Utilized	28.7
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Cycles of 2 Ports Utilized	20.8
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Cycles of 3+ Ports Utilized	72.3
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	ALU Operation Utilization	34.6
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Port 0	70.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Port 1	15.7
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Port 5	13.4
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,6	Port 6	39.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Load Operation Utilization	44.2
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,5	Store Operation Utilization	3.1
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,4	Vector Capacity Usage (FPU)	96.3
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Average CPU Frequency	2405550103.875124
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Total Thread Count	3
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Paused Time	0.0
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,0	Effective Physical Core Utilization	19.9% (0.796 out of 4)
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Effective Logical Core Utilization	9.2% (0.740 out of 8)
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,0	Collection and Platform Info	
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Application Command Line	taskset "-c" "0" "./cpu-simd-study/builds/bench_ip_ifx_avx512_zmm" 
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Operating System	6.6.87.2-microsoft-standard-WSL2 DISTRIB_ID=Ubuntu DISTRIB_RELEASE=24.04 DISTRIB_CODENAME=noble DISTRIB_DESCRIPTION="Ubuntu 24.04.5 LTS"
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Computer Name	SUWESH51135G7
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Result Size	7038029
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Collection start time	03:22:30 28/11/2026 UTC
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Collection stop time	03:22:34 28/11/2026 UTC
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	Collector Type	Driverless Perf system-wide sampling
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,1	CPU	
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Name	Intel(R) microarchitecture code named Tigerlake
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Frequency	2419208872
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Logical CPU Count	8
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,2	Cache Allocation Technology	
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Level 2 capability	not detected
+ifx,avx512-zmm,ip-ifx-avx512-zmm-ue-summary.csv,3	Level 3 capability	not detected

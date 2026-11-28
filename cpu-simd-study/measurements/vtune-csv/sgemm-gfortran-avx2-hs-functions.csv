@@ -1,0 +1,4 @@
+Function	CPU Time	CPU Time:Effective Time	CPU Time:Spin Time	CPU Time:Overhead Time	Module	Function (Full)	Source File	Start Address
+MAIN__	11.017832	11.017832	0.0	0.0	bench_nativesgemm_gfortran_avx2	MAIN__	[Unknown]	0x11e0
+func@0x1996c0	0.019736	0.019736	0.0	0.0	libc.so.6	func@0x1996c0	[Unknown]	0x1996c0
+__register_frame_info_bases	0.010733	0.010733	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70

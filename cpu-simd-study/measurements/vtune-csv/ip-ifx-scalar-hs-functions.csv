@@ -1,0 +1,4 @@
+Function	CPU Time	CPU Time:Effective Time	CPU Time:Spin Time	CPU Time:Overhead Time	Module	Function (Full)	Source File	Start Address
+fnlp_vector_search_core_mp_inner_product_	59.487860	59.487860	0.0	0.0	bench_ip_ifx_scalar	fnlp_vector_search_core_mp_inner_product_	[Unknown]	0x405eb0
+MAIN__	0.020058	0.020058	0.0	0.0	bench_ip_ifx_scalar	MAIN__	[Unknown]	0x408550
+pthread_mutex_init	0.012183	0.012183	0.0	0.0	libc.so.6	pthread_mutex_init	[Unknown]	0x9f7d0

@@ -1,0 +1,5 @@
+Function	CPU Time	CPU Time:Effective Time	CPU Time:Spin Time	CPU Time:Overhead Time	Module	Function (Full)	Source File	Start Address
+MAIN__	45.731800	45.731800	0.0	0.0	bench_nativesgemm_ifx_scalar	MAIN__	[Unknown]	0x405230
+__intel_avx_rep_memset	0.041510	0.041510	0.0	0.0	bench_nativesgemm_ifx_scalar	__intel_avx_rep_memset	[Unknown]	0x45fe60
+__register_frame_info_bases	0.023774	0.023774	0.0	0.0	libgcc_s.so.1	__register_frame_info_bases	[Unknown]	0x25e70
+__register_frame	0.008050	0.008050	0.0	0.0	libgcc_s.so.1	__register_frame	[Unknown]	0x25f00
